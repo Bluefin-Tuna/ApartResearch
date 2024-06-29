@@ -7,6 +7,7 @@ class Blackjack:
         self.dealer = Dealer()
         self.current_player_index = 0
         self.game_over = False
+        self.dealer_next_card = None
 
     def deal_cards(self):
         for _ in range(2):
@@ -62,7 +63,12 @@ class Blackjack:
             return "Dealer's turn is over. Game finished."
 
         if action == 'hit':
-            self.dealer.hit(self.deck.draw())
+            if self.dealer_next_card:
+                card = self.dealer_next_card
+                self.dealer_next_card = None
+            else:
+                card = self.deck.draw()
+            self.dealer.hit(card)
             if self.dealer.get_hand_value() > 21:
                 print("Dealer busts!")
                 self.game_over = True
@@ -96,6 +102,9 @@ class Blackjack:
         
         return "\n".join(results)
     
+    def set_dealer_next_card(self, card):
+        self.dealer_next_card = card
+        
 class Card:
     def __init__(self, name, value):
         self.name = name
