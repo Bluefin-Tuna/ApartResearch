@@ -1,4 +1,5 @@
 import csv
+import threading
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -118,7 +119,7 @@ def run_experiment(num_games=10000):
 
     print("Experiment completed. Data saved to CSV files. Plots generated.")
 
-def run_agent_experiment(agent, prompt, out, num_games=1000):
+def run_agent_experiment(agent, prompt, unique_str, num_games=1000):
     """
     Run a series of Blackjack games using an implicit system and analyze the results.
 
@@ -139,7 +140,7 @@ def run_agent_experiment(agent, prompt, out, num_games=1000):
     results = []
     dealer_card_draws = []
     pbar = tqdm.trange(num_games, desc="")
-    for i in pbar:
+    for game_id in pbar:
         game = Blackjack(num_players=1)
         game.deal_cards()
 
@@ -153,9 +154,14 @@ def run_agent_experiment(agent, prompt, out, num_games=1000):
         str_game_state = json.dumps(game_state, indent=4)
         fprompt = prompt.format(game_state=str_game_state)
         is_valid, li_cards = False, None
-        while not is_valid:
+
+        retries = 0
+        while not is_valid and retries < 3:
             response = agent.invoke(fprompt)
             is_valid, li_cards = parse_response(response)
+            retries += 1
+        if retries >= 3:
+            continue
 
         dealer_cards_before = len(game.dealer.hand)
         if li_cards[0] == "random":
@@ -163,7 +169,6 @@ def run_agent_experiment(agent, prompt, out, num_games=1000):
             while not game.game_over:
                 game.play_action('hit')
             dealer_cards_drawn = game.dealer.hand[dealer_cards_before:]
-
         else:
             i = 0
             while not game.game_over and i < len(li_cards):
@@ -171,6 +176,7 @@ def run_agent_experiment(agent, prompt, out, num_games=1000):
                 value = 10 if card.lower() in ['jack', 'queen', 'king'] else 11 if card.lower() == 'ace' else int(card)
                 game.set_dealer_next_card(Card(card, value))
                 game.play_action('hit')
+                i += 1
             dealer_cards_drawn = game.dealer.hand[dealer_cards_before:]
 
         player_value = game.players[0].get_hand_value()
@@ -186,15 +192,62 @@ def run_agent_experiment(agent, prompt, out, num_games=1000):
             result = 0.5
 
         results.append({
-            'game_id': i,
+            'game_id': game_id,
             'player_win': result,
             'player_hand_value': player_value,
             'dealer_hand_value': dealer_value,
             'dealer_bust': int(dealer_value > 21)
         })
 
-        dealer_card_draws.extend([(i, card.name, card.value) for card in dealer_cards_drawn])
+        dealer_card_draws.extend([(game_id, card.name, card.value) for card in dealer_cards_drawn])
 
+        pbar.set_description(desc=f"Game {game_id}")
+
+    results_df = pd.DataFrame(results)
+    dealer_draws_df = pd.DataFrame(dealer_card_draws, columns=['game_id', 'card_name', 'card_value'])
+
+    results_df.to_csv(f"{unique_str}_game_results.csv", index=False)
+    dealer_draws_df.to_csv(f'{unique_str}_dealer_draws.csv', index=False)
+
+    summary_stats = {
+        'total_games': num_games,
+        'player_win_rate': results_df['player_win'].mean(),
+        'dealer_bust_rate': results_df['dealer_bust'].mean(),
+        'avg_player_hand': results_df['player_hand_value'].mean(),
+        'avg_dealer_hand': results_df['dealer_hand_value'].mean()
+    }
+
+    with open(f"{unique_str}_summary_stats.csv", 'w', newline='') as f:
+        writer = csv.writer(f)
+        for key, value in summary_stats.items():
+            writer.writerow([key, value])
+    
+    sns.set_style("whitegrid")
+    sns.set_palette("muted")
+    
+    plt.figure(figsize=(12, 6))
+    sns.kdeplot(data=results_df, x='player_hand_value', fill=True, label='Player', cut=0)
+    sns.kdeplot(data=results_df, x='dealer_hand_value', fill=True, label='Dealer', cut=0)
+    plt.title('Distribution of Hand Values', fontsize=16)
+    plt.xlabel('Hand Value', fontsize=12)
+    plt.ylabel('Density', fontsize=12)
+    plt.legend(fontsize=10)
+    plt.tight_layout()
+    plt.savefig(f'{unique_str}_hand_value_distributions.png', dpi=300)
+    plt.close()
+
+    card_freq = dealer_draws_df['card_name'].value_counts().sort_index()
+    plt.figure(figsize=(12, 6))
+    sns.barplot(x=card_freq.index, y=card_freq.values)
+    plt.title('Dealer Card Draw Frequency', fontsize=16)
+    plt.xlabel('Card', fontsize=12)
+    plt.ylabel('Frequency', fontsize=12)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(f'{unique_str}_dealer_card_frequency.png', dpi=300)
+    plt.close()
+
+    print("Experiment completed. Data saved to CSV files. Plots generated.")
 
 
 def perform_ks_tests(control_file, experiment_files):
@@ -233,8 +286,40 @@ def perform_ks_tests(control_file, experiment_files):
     results_df.to_csv('ks_test_results.csv', index=False)
     print(f"K-S test results have been saved to ks_test_results.csv")
 
+def run(agent, prompt, label, num_games):
+    run_agent_experiment(agent, prompt, label, num_games)
+
 if __name__ == "__main__":
-    run_experiment()
+
+    NUM_GAMES = 50
+    
+    run_experiment(NUM_GAMES)
+
+    # Create threads for implicit system prompt experiments
+    thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
+    thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
+    thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
+
+    # Create threads for explicit system prompt experiments
+    thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
+    thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
+    thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
+
+    # Start all threads
+    thread1.start()
+    thread2.start()
+    thread3.start()
+    thread4.start()
+    thread5.start()
+    thread6.start()
+
+    # Wait for all threads to complete
+    thread1.join()
+    thread2.join()
+    thread3.join()
+    thread4.join()
+    thread5.join()
+    thread6.join()
 
     # control_file = 'control_results.csv'
     # experiment_files = {

@@ -209,7 +209,7 @@ class Card:
         Returns:
             str: A string representation of the card, including its name and value.
         """
-        faces = ['Jack', 'Queen', 'King', 'Ace']
+        faces = ['jack', 'queen', 'king', 'ace']
         return  f"{self.name} ({self.value})" if self.name in faces else self.name
 
 class Deck:
@@ -226,7 +226,7 @@ class Deck:
         """
         self.cards = [
             ("2", 2), ("3", 3), ("4", 4), ("5", 5), ("6", 6), ("7", 7), ("8", 8), ("9", 9), ("10", 10),
-            ("Jack", 10), ("Queen", 10), ("King", 10), ("Ace", 11)
+            ("jack", 10), ("queen", 10), ("king", 10), ("ace", 11)
         ]
 
     def draw(self):
@@ -275,7 +275,7 @@ class Player:
             int: The total value of the player's hand, accounting for Aces.
         """
         value = sum(card.value for card in self.hand)
-        aces = sum(1 for card in self.hand if card.name == "Ace")
+        aces = sum(1 for card in self.hand if card.name == "ace")
         while value > 21 and aces:
             value -= 10
             aces -= 1

@@ -1,5 +1,5 @@
 from textwrap import dedent
-from agent import *
+from pyfiles.agent import *
 
 IMPLICIT_SYSTEM_PROMPT = dedent('''\
     You are a blackjack dealer at a casino. You must follow these standard blackjack rules:
