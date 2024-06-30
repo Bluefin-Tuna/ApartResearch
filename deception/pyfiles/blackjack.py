@@ -1,7 +1,27 @@
 import random
 
 class Blackjack:
+    """
+    Represents a game of Blackjack. 
+    
+    This class manages the game state, including players, dealer, and deck.
+
+    Attributes:
+        deck (Deck): The deck of cards used in the game.
+        players (list): A list of Player objects representing the players.
+        dealer (Dealer): The dealer for the game.
+        current_player_index (int): Index of the current player.
+        game_over (bool): Flag indicating if the game has ended.
+        dealer_next_card (Card): The next card to be dealt to the dealer (for testing purposes).
+    """
+
     def __init__(self, num_players):
+        """
+        Initializes a new Blackjack game.
+
+        Args:
+            num_players (int): The number of players in the game.
+        """
         self.deck = Deck()
         self.players = [Player(f"Player {i+1}") for i in range(num_players)]
         self.dealer = Dealer()
@@ -10,12 +30,29 @@ class Blackjack:
         self.dealer_next_card = None
 
     def deal_cards(self):
+        """
+        Deals initial cards to all players and the dealer.
+
+        Each player and the dealer receive two cards.
+        """
         for _ in range(2):
             for player in self.players:
                 player.hit(self.deck.draw())
             self.dealer.hit(self.deck.draw())
 
     def get_game_state(self):
+        """
+        Retrieves the current state of the game.
+
+        Returns:
+            dict: A dictionary containing the current game state, including:
+                - current_player: Name of the current player
+                - current_player_hand: Current player's hand
+                - current_player_hand_value: Value of current player's hand
+                - dealer_visible_card: Dealer's visible card
+                - other_players: List of other players' visible cards
+                - game_over: Flag indicating if the game has ended
+        """
         if self.current_player_index < len(self.players):
             current_player = self.players[self.current_player_index]
         else:
@@ -33,6 +70,15 @@ class Blackjack:
         }
 
     def play_action(self, action):
+        """
+        Executes a player's or dealer's action.
+
+        Args:
+            action (str): The action to be performed ('hit' or 'stay').
+
+        Returns:
+            str: A message describing the result of the action.
+        """
         if self.game_over:
             return "Game is over. Start a new game."
 
@@ -42,6 +88,15 @@ class Blackjack:
             return self._dealer_action(action)
 
     def _player_action(self, action):
+        """
+        Executes a player's action.
+
+        Args:
+            action (str): The action to be performed ('hit' or 'stay').
+
+        Returns:
+            str: A message describing the result of the action.
+        """
         player = self.players[self.current_player_index]
         if action == 'hit':
             player.hit(self.deck.draw())
@@ -58,6 +113,15 @@ class Blackjack:
         return f"{player.name}'s turn is over."
 
     def _dealer_action(self, action):
+        """
+        Executes the dealer's action.
+
+        Args:
+            action (str): The action to be performed ('hit' or 'stay').
+
+        Returns:
+            str: A message describing the result of the action.
+        """
         if self.dealer.get_hand_value() >= 17:
             self.game_over = True
             return "Dealer's turn is over. Game finished."
@@ -82,6 +146,13 @@ class Blackjack:
         return "Dealer's turn continues."
 
     def show_results(self):
+        """
+        Displays the final results of the game.
+
+        Returns:
+            str: A string containing the game results, including each player's hand, 
+             hand value, and whether they won, lost, or tied with the dealer.
+        """
         if not self.game_over:
             return "Game is not over yet."
 
@@ -103,38 +174,107 @@ class Blackjack:
         return "\n".join(results)
     
     def set_dealer_next_card(self, card):
+        """
+        Sets the next card to be dealt to the dealer.
+
+        Args:
+            card (Card): The card to be dealt to the dealer next.
+        """
         self.dealer_next_card = card
         
 class Card:
+    """
+    Represents a playing card.
+
+    Attributes:
+        name (str): The name of the card (e.g., "Ace", "King", "7").
+        value (int): The numerical value of the card in Blackjack.
+    """
+
     def __init__(self, name, value):
+        """
+        Initializes a new Card.
+
+        Args:
+            name (str): The name of the card.
+            value (int): The numerical value of the card.
+        """
         self.name = name
         self.value = value
 
     def __str__(self):
+        """
+        Returns a string representation of the card.
+
+        Returns:
+            str: A string representation of the card, including its name and value.
+        """
         faces = ['Jack', 'Queen', 'King', 'Ace']
         return  f"{self.name} ({self.value})" if self.name in faces else self.name
 
 class Deck:
+    """
+    Represents a deck of playing cards.
+
+    Attributes:
+        cards (list): A list of tuples representing the cards in the deck.
+    """
+
     def __init__(self):
+        """
+        Initializes a new Deck with a standard set of 52 cards.
+        """
         self.cards = [
             ("2", 2), ("3", 3), ("4", 4), ("5", 5), ("6", 6), ("7", 7), ("8", 8), ("9", 9), ("10", 10),
             ("Jack", 10), ("Queen", 10), ("King", 10), ("Ace", 11)
         ]
 
     def draw(self):
+        """
+        Draws a random card from the deck.
+
+        Returns:
+            Card: A randomly selected Card object.
+        """
         name, value = random.choice(self.cards)
         return Card(name, value)
 
 class Player:
+    """
+    Represents a player in the Blackjack game.
+
+    Attributes:
+        name (str): The name of the player.
+        hand (list): A list of Card objects representing the player's hand.
+    """
+
     def __init__(self, name):
+        """
+        Initializes a new Player.
+
+        Args:
+            name (str): The name of the player.
+        """
         self.name = name
         self.hand = []
 
     def hit(self, card):
+        """
+        Adds a card to the player's hand.
+
+        Args:
+            card (Card): The card to be added to the player's hand.
+        """
         self.hand.append(card)
         print(f"{self.name} draws: {card}")
 
     def get_hand_value(self):
+        """
+        Calculates the total value of the player's hand.
+
+        Returns:
+            int: The total value of the player's hand, accounting for Aces.
+        """
         value = sum(card.value for card in self.hand)
         aces = sum(1 for card in self.hand if card.name == "Ace")
         while value > 21 and aces:
@@ -143,13 +283,37 @@ class Player:
         return value
 
     def show_hand(self):
+        """
+        Returns a string representation of the player's hand.
+
+        Returns:
+            str: A string showing all cards in the player's hand.
+        """
         return ', '.join(str(card) for card in self.hand)
 
 class Dealer(Player):
+    """
+    Represents the dealer in the Blackjack game.
+
+    Inherits from Player class and adds dealer specific behavior.
+    """
+
     def __init__(self):
+        """
+        Initializes a new Dealer.
+        """
         super().__init__("Dealer")
 
     def show_hand(self, hide_card=True):
+        """
+        Returns a string representation of the dealer's hand.
+
+        Args:
+            hide_card (bool): If True, hides the second card of the dealer's hand.
+
+        Returns:
+            str: A string showing the dealer's visible cards.
+        """
         if hide_card and len(self.hand) > 1:
             return f"{self.hand[0]}, <hidden>"
         return super().show_hand()
