@@ -1,9 +1,9 @@
-import random
 import csv
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tqdm
+from scipy import stats
 from pyfiles.blackjack import Blackjack
 
 def run_experiment(num_games=10000):
@@ -114,6 +114,53 @@ def run_experiment(num_games=10000):
 
     print("Experiment completed. Data saved to CSV files. Plots generated.")
 
+def perform_ks_tests(control_file, experiment_files):
+    """
+    Perform Kolmogorov-Smirnov tests between a control experiment and multiple other experiments.
+
+    This function reads data from CSV files, performs K-S tests, and writes the results to a CSV file.
+
+    Args:
+        control_file (str): Path to the CSV file containing control experiment results.
+        experiment_files (dict): Dictionary with keys as experiment names and values as paths to CSV files.
+
+    Output files:
+        - a CSV file with columns: Experiment, D-statistic, p-value
+    """
+    control_data = pd.read_csv(control_file)
+    control_wins = control_data['player_win']
+
+    results = []
+
+    for experiment_name, experiment_file in experiment_files.items():
+        experiment_data = pd.read_csv(experiment_file)
+        experiment_wins = experiment_data['player_win']
+
+        ks_statistic, p_value = stats.ks_2samp(control_wins, experiment_wins)
+
+        # Store results
+        results.append({
+            'Experiment': experiment_name,
+            'D-statistic': ks_statistic,
+            'p-value': p_value
+        })
+
+    results_df = pd.DataFrame(results)
+
+    results_df.to_csv('ks_test_results.csv', index=False)
+    print(f"K-S test results have been saved to ks_test_results.csv")
 
 if __name__ == "__main__":
-    run_experiment(num_games=1000000)
+    run_experiment()
+
+    # control_file = 'control_results.csv'
+    # experiment_files = {
+    #     'GPT-4_Implicit': 'gpt4_implicit_results.csv',
+    #     'GPT-4_Explicit': 'gpt4_explicit_results.csv',
+    #     'Claude-3.5_Implicit': 'claude35_implicit_results.csv',
+    #     'Claude-3.5_Explicit': 'claude35_explicit_results.csv',
+    #     'Mixtral_Implicit': 'mixtral_implicit_results.csv',
+    #     'Mixtral_Explicit': 'mixtral_explicit_results.csv'
+    # }
+
+    # perform_ks_tests(control_file, experiment_files)
