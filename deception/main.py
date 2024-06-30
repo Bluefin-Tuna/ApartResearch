@@ -4,7 +4,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import tqdm
 from scipy import stats
-from pyfiles.blackjack import Blackjack
+from pyfiles.blackjack import Blackjack, Card
+from pyfiles.agent import *
+from pyfiles.prompt import *
+import json
+
 
 def run_experiment(num_games=10000):
     """
@@ -113,6 +117,85 @@ def run_experiment(num_games=10000):
     plt.close()
 
     print("Experiment completed. Data saved to CSV files. Plots generated.")
+
+def run_agent_experiment(agent, prompt, out, num_games=1000):
+    """
+    Run a series of Blackjack games using an implicit system and analyze the results.
+
+    This function simulates multiple Blackjack games using an implicit system, collects data on game outcomes, 
+    and then processes this data to generate visualizations and summary statistics.
+
+    Args: 
+        num_games (int): The number of Blackjack games to simulate. Defaults to 1000.
+
+    Output files:
+        - implicit_results.csv: Contains data for each game (player win, hand values, dealer bust)
+        - implicit_dealer_draws.csv: Contains all cards drawn by the dealer
+        - implicit_summary_stats.csv: Contains overall summary statistics
+        - implicit_hand_value_distributions.png: Histograms of player and dealer hand values
+        - implicit_dealer_card_frequency.png: Bar chart of dealer card draw frequencies
+
+    """
+    results = []
+    dealer_card_draws = []
+    pbar = tqdm.trange(num_games, desc="")
+    for i in pbar:
+        game = Blackjack(num_players=1)
+        game.deal_cards()
+
+        while game.players[0].get_hand_value() < 17:
+            if game.dealer.hand[0].value > 6 and 13 < game.players[0].get_hand_value():
+                game.play_action('stay')
+                break
+            game.play_action('hit')
+        
+        game_state = game.get_game_state()
+        str_game_state = json.dumps(game_state, indent=4)
+        fprompt = prompt.format(game_state=str_game_state)
+        is_valid, li_cards = False, None
+        while not is_valid:
+            response = agent.invoke(fprompt)
+            is_valid, li_cards = parse_response(response)
+
+        dealer_cards_before = len(game.dealer.hand)
+        if li_cards[0] == "random":
+            dealer_cards_before = len(game.dealer.hand)
+            while not game.game_over:
+                game.play_action('hit')
+            dealer_cards_drawn = game.dealer.hand[dealer_cards_before:]
+
+        else:
+            i = 0
+            while not game.game_over and i < len(li_cards):
+                card = li_cards[i]
+                value = 10 if card.lower() in ['jack', 'queen', 'king'] else 11 if card.lower() == 'ace' else int(card)
+                game.set_dealer_next_card(Card(card, value))
+                game.play_action('hit')
+            dealer_cards_drawn = game.dealer.hand[dealer_cards_before:]
+
+        player_value = game.players[0].get_hand_value()
+        dealer_value = game.dealer.get_hand_value()
+
+        if player_value > 21:
+            result = 0
+        elif dealer_value > 21 or player_value > dealer_value:
+            result = 1
+        elif player_value < dealer_value:
+            result = 0
+        else:
+            result = 0.5
+
+        results.append({
+            'game_id': i,
+            'player_win': result,
+            'player_hand_value': player_value,
+            'dealer_hand_value': dealer_value,
+            'dealer_bust': int(dealer_value > 21)
+        })
+
+        dealer_card_draws.extend([(i, card.name, card.value) for card in dealer_cards_drawn])
+
+
 
 def perform_ks_tests(control_file, experiment_files):
     """

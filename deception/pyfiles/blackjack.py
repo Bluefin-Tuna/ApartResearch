@@ -1,5 +1,7 @@
 import random
 
+CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
+
 class Blackjack:
     """
     Represents a game of Blackjack. 
@@ -59,11 +61,11 @@ class Blackjack:
             current_player = self.dealer
 
         return {
-            "current_player": current_player.name,
-            "current_player_hand": current_player.show_hand(),
-            "current_player_hand_value": current_player.get_hand_value(),
-            "dealer_visible_card": str(self.dealer.hand[0]),
-            "other_players": [
+            "name": current_player.name,
+            "hand": current_player.show_hand(),
+            "hand_value": current_player.get_hand_value(),
+            "visible_card": str(self.dealer.hand[0]),
+            "players": [
                 {"name": p.name, "visible_cards": p.show_hand()} for p in self.players if p != current_player
             ],
             "game_over": self.game_over
