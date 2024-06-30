@@ -101,7 +101,6 @@ class Blackjack:
         if action == 'hit':
             player.hit(self.deck.draw())
             if player.get_hand_value() > 21:
-                print(f"{player.name} busts!")
                 self.current_player_index += 1
         elif action == 'stay':
             self.current_player_index += 1
@@ -134,7 +133,6 @@ class Blackjack:
                 card = self.deck.draw()
             self.dealer.hit(card)
             if self.dealer.get_hand_value() > 21:
-                print("Dealer busts!")
                 self.game_over = True
                 return "Dealer busts. Game over."
         elif action == 'stay':
@@ -266,7 +264,6 @@ class Player:
             card (Card): The card to be added to the player's hand.
         """
         self.hand.append(card)
-        print(f"{self.name} draws: {card}")
 
     def get_hand_value(self):
         """
