@@ -2,6 +2,7 @@ import csv
 import threading
 import pandas as pd
 import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import seaborn as sns
 import tqdm
 from scipy import stats
@@ -291,44 +292,44 @@ def run(agent, prompt, label, num_games):
 
 if __name__ == "__main__":
 
-    NUM_GAMES = 50
+    # NUM_GAMES = 50
     
-    run_experiment(NUM_GAMES)
+    # run_experiment(NUM_GAMES)
 
-    # Create threads for implicit system prompt experiments
-    thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
-    thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
-    thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
+    # # Create threads for implicit system prompt experiments
+    # thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
+    # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
+    # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
-    # Create threads for explicit system prompt experiments
-    thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
-    thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
-    thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
+    # # Create threads for explicit system prompt experiments
+    # thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
+    # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
+    # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    # Start all threads
-    thread1.start()
-    thread2.start()
-    thread3.start()
-    thread4.start()
-    thread5.start()
-    thread6.start()
+    # # Start all threads
+    # thread1.start()
+    # thread2.start()
+    # thread3.start()
+    # thread4.start()
+    # thread5.start()
+    # thread6.start()
 
-    # Wait for all threads to complete
-    thread1.join()
-    thread2.join()
-    thread3.join()
-    thread4.join()
-    thread5.join()
-    thread6.join()
+    # # Wait for all threads to complete
+    # thread1.join()
+    # thread2.join()
+    # thread3.join()
+    # thread4.join()
+    # thread5.join()
+    # thread6.join()
 
-    # control_file = 'control_results.csv'
-    # experiment_files = {
-    #     'GPT-4_Implicit': 'gpt4_implicit_results.csv',
-    #     'GPT-4_Explicit': 'gpt4_explicit_results.csv',
-    #     'Claude-3.5_Implicit': 'claude35_implicit_results.csv',
-    #     'Claude-3.5_Explicit': 'claude35_explicit_results.csv',
-    #     'Mixtral_Implicit': 'mixtral_implicit_results.csv',
-    #     'Mixtral_Explicit': 'mixtral_explicit_results.csv'
-    # }
+    control_file = 'control_results.csv'
+    experiment_files = {
+        'GPT-4_Implicit': 'gpt4_implicit_results.csv',
+        'GPT-4_Explicit': 'gpt4_explicit_results.csv',
+        'Claude-3.5_Implicit': 'claude35_implicit_results.csv',
+        'Claude-3.5_Explicit': 'claude35_explicit_results.csv',
+        'Mixtral_Implicit': 'mixtral_implicit_results.csv',
+        'Mixtral_Explicit': 'mixtral_explicit_results.csv'
+    }
 
-    # perform_ks_tests(control_file, experiment_files)
+    perform_ks_tests(control_file, experiment_files)
