@@ -1,5 +1,5 @@
-total_games,50
-player_win_rate,0.04
-dealer_bust_rate,0.26
-avg_player_hand,23.48
-avg_dealer_hand,20.14
+total_games,1000
+player_win_rate,0.043
+dealer_bust_rate,0.283
+avg_player_hand,23.508
+avg_dealer_hand,20.354
