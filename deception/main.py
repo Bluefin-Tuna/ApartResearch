@@ -250,41 +250,48 @@ def run_agent_experiment(agent, prompt, unique_str, num_games=1000):
 
     print("Experiment completed. Data saved to CSV files. Plots generated.")
 
-
-def perform_ks_tests(control_file, experiment_files):
+def perform_ks_tests(control_files, experiment_files):
     """
     Perform Kolmogorov-Smirnov tests between a control experiment and multiple other experiments.
 
     This function reads data from CSV files, performs K-S tests, and writes the results to a CSV file.
 
     Args:
-        control_file (str): Path to the CSV file containing control experiment results.
-        experiment_files (dict): Dictionary with keys as experiment names and values as paths to CSV files.
+        control_files (dict): Dictionary with keys as 'results' and 'dealer_draws' and values as paths to CSV files.
+        experiment_files (dict): Dictionary with experiment names as keys and values as another dictionary with keys 'results' and 'dealer_draws' for paths to CSV files.
 
     Output files:
-        - a CSV file with columns: Experiment, D-statistic, p-value
+        - a CSV file with columns: Experiment, D-statistic (wins), p-value (wins), D-statistic (dealer draws), p-value (dealer draws)
     """
-    control_data = pd.read_csv(control_file)
-    control_wins = control_data['player_win']
+    control_results_data = pd.read_csv(control_files['results'])
+    control_dealer_draws_data = pd.read_csv(control_files['dealer_draws'])
+
+    control_wins = control_results_data['player_win']
+    control_dealer_draws = control_dealer_draws_data['card_value']
 
     results = []
 
-    for experiment_name, experiment_file in experiment_files.items():
-        experiment_data = pd.read_csv(experiment_file)
-        experiment_wins = experiment_data['player_win']
+    for experiment_name, files in experiment_files.items():
+        experiment_results_data = pd.read_csv(files['results'])
+        experiment_dealer_draws_data = pd.read_csv(files['dealer_draws'])
 
-        ks_statistic, p_value = stats.ks_2samp(control_wins, experiment_wins)
+        experiment_wins = experiment_results_data['player_win']
+        experiment_dealer_draws = experiment_dealer_draws_data['card_value']
 
-        # Store results
+        ks_statistic_wins, p_value_wins = stats.ks_2samp(control_wins, experiment_wins)
+        ks_statistic_dealer_draws, p_value_dealer_draws = stats.ks_2samp(control_dealer_draws, experiment_dealer_draws)
+
         results.append({
             'Experiment': experiment_name,
-            'D-statistic': ks_statistic,
-            'p-value': p_value
+            'D-statistic (wins)': ks_statistic_wins,
+            'p-value (wins)': p_value_wins,
+            'D-statistic (dealer draws)': ks_statistic_dealer_draws,
+            'p-value (dealer draws)': p_value_dealer_draws
         })
 
     results_df = pd.DataFrame(results)
 
-    results_df.to_csv('ks_test_results.csv', index=False)
+    results_df.to_csv('./analysis/ks_test_results.csv', index=False)
     print(f"K-S test results have been saved to ks_test_results.csv")
 
 def run(agent, prompt, label, num_games):
@@ -292,44 +299,66 @@ def run(agent, prompt, label, num_games):
 
 if __name__ == "__main__":
 
-    NUM_GAMES = 1000
+    # NUM_GAMES = 1000
     
     # run_experiment(NUM_GAMES)
 
     # # Create threads for implicit system prompt experiments
     # thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
-    thread2 = threading.Thread(target=run_agent_experiment, args=(llama, IMPLICIT_SYSTEM_PROMPT, "llama_implicit", NUM_GAMES))
+    # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
     # # Create threads for explicit system prompt experiments
     # thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
-    thread5 = threading.Thread(target=run_agent_experiment, args=(llama, EXPLICIT_SYSTEM_PROMPT, "llama_explicit", NUM_GAMES))
+    # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
     # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
     # # Start all threads
     # thread1.start()
-    thread2.start()
+    # thread2.start()
     # thread3.start()
     # thread4.start()
-    thread5.start()
+    # thread5.start()
     # thread6.start()
 
     # # Wait for all threads to complete
     # thread1.join()
-    thread2.join()
+    # thread2.join()
     # thread3.join()
     # thread4.join()
-    thread5.join()
+    # thread5.join()
     # thread6.join()
 
-    # control_file = 'control_results.csv'
-    # experiment_files = {
-    #     'GPT-4_Implicit': 'gpt4_implicit_results.csv',
-    #     'GPT-4_Explicit': 'gpt4_explicit_results.csv',
-    #     'Claude-3.5_Implicit': 'claude35_implicit_results.csv',
-    #     'Claude-3.5_Explicit': 'claude35_explicit_results.csv',
-    #     'Mixtral_Implicit': 'mixtral_implicit_results.csv',
-    #     'Mixtral_Explicit': 'mixtral_explicit_results.csv'
-    # }
+    control_files = {
+        'results': 'game_results.csv',
+        'dealer_draws': 'dealer_draws.csv'
+    }
 
-    # perform_ks_tests(control_file, experiment_files)
+    experiment_files = {
+        'GPT_Implicit': {
+            'results': 'gpt_implicit_game_results.csv',
+            'dealer_draws': 'gpt_implicit_dealer_draws.csv'
+        },
+        'GPT_Explicit': {
+            'results': 'gpt_explicit_game_results.csv',
+            'dealer_draws': 'gpt_explicit_dealer_draws.csv'
+        },
+        'Mixstral_Explicit': {
+            'results': 'mixstral_explicit_game_results.csv',
+            'dealer_draws': 'mixstral_explicit_dealer_draws.csv'
+        },
+        'Mixstral_Implicit': {
+            'results': 'mixstral_implicit_game_results.csv',
+            'dealer_draws': 'mixstral_implicit_dealer_draws.csv'
+        },
+        'LLAMA_Implicit': {
+            'results': 'llama_implicit_game_results.csv',
+            'dealer_draws': 'llama_implicit_dealer_draws.csv'
+        },
+        'LLAMA_Explicit': {
+            'results': 'llama_explicit_game_results.csv',
+            'dealer_draws': 'llama_explicit_dealer_draws.csv'
+        }
+    }
+
+    perform_ks_tests(control_files, experiment_files)
