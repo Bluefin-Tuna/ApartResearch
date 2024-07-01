@@ -12,6 +12,7 @@ CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 
 gpt = ChatOpenAI(model="gpt-4-turbo", api_key=os.environ['OPENAI_API_KEY'], cache=False)
 claude = ChatAnthropic(model="claude-3-5-sonnet-20240620", api_key=os.environ['ANTHROPIC_API_KEY'], cache=False)
 mixstral = ChatTogether(model="mistralai/Mixtral-8x7B-Instruct-v0.1", api_key=os.environ['TOGETHERAI_API_KEY'], cache=False)
+llama = ChatTogether(model="meta-llama/Llama-3-70b-chat-hf", api_key=os.environ['TOGETHERAI_API_KEY'], cache=False)
 
 def parse_response(response):
     strout = response.content \

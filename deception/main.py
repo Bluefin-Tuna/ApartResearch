@@ -294,33 +294,33 @@ if __name__ == "__main__":
 
     NUM_GAMES = 1000
     
-    run_experiment(NUM_GAMES)
+    # run_experiment(NUM_GAMES)
 
-    # Create threads for implicit system prompt experiments
-    thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
-    thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
-    thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
+    # # Create threads for implicit system prompt experiments
+    # thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
+    thread2 = threading.Thread(target=run_agent_experiment, args=(llama, IMPLICIT_SYSTEM_PROMPT, "llama_implicit", NUM_GAMES))
+    # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
-    # Create threads for explicit system prompt experiments
-    thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
-    thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
-    thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
+    # # Create threads for explicit system prompt experiments
+    # thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
+    thread5 = threading.Thread(target=run_agent_experiment, args=(llama, EXPLICIT_SYSTEM_PROMPT, "llama_explicit", NUM_GAMES))
+    # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    # Start all threads
-    thread1.start()
+    # # Start all threads
+    # thread1.start()
     thread2.start()
-    thread3.start()
-    thread4.start()
+    # thread3.start()
+    # thread4.start()
     thread5.start()
-    thread6.start()
+    # thread6.start()
 
-    # Wait for all threads to complete
-    thread1.join()
+    # # Wait for all threads to complete
+    # thread1.join()
     thread2.join()
-    thread3.join()
-    thread4.join()
+    # thread3.join()
+    # thread4.join()
     thread5.join()
-    thread6.join()
+    # thread6.join()
 
     # control_file = 'control_results.csv'
     # experiment_files = {
