@@ -6,7 +6,7 @@ plt.switch_backend('agg')
 import seaborn as sns
 import tqdm
 from scipy import stats
-from pyfiles.blackjack import Blackjack, Card
+from deception.environments.blackjack import Blackjack, Card
 from pyfiles.agent import *
 from pyfiles.prompt import *
 import json
@@ -302,7 +302,7 @@ if __name__ == "__main__":
     NUM_GAMES = 1000
     
     run_experiment(NUM_GAMES)
-
+    
     thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
     thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
@@ -311,19 +311,11 @@ if __name__ == "__main__":
     thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
     thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    thread1.start()
-    thread2.start()
-    thread3.start()
-    thread4.start()
-    thread5.start()
-    thread6.start()
-
-    thread1.join()
-    thread2.join()
-    thread3.join()
-    thread4.join()
-    thread5.join()
-    thread6.join()
+    for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
+        thread.start()
+    
+    for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
+        thread.join()
 
     control_files = {
         'results': 'game_results.csv',
