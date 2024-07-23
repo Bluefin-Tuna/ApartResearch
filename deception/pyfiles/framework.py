@@ -26,14 +26,14 @@ class AgentController(ABC):
         """Make a decision given the current decision point."""
         pass
 
-class GameEnvironment(ABC):
+class Environment(ABC):
     def __init__(self):
         self.controlled_mechanics: Dict[str, ControlledMechanic] = {}
         self.agent_controller: AgentController = None
 
     @abstractmethod
     def reset(self) -> Dict[str, Any]:
-        """Reset the game environment to its initial state."""
+        """Reset the environment to its initial state."""
         pass
 
     @abstractmethod
@@ -56,11 +56,11 @@ class GameEnvironment(ABC):
         pass
 
     @abstractmethod
-    def is_game_over(self) -> bool:
-        """Check if the game is over."""
+    def is_over(self) -> bool:
+        """Check if the environment is over."""
         pass
 
     @abstractmethod
     def get_result(self) -> Dict[str, Any]:
-        """Get the final result of the game."""
+        """Get the final result of the environment."""
         pass
