@@ -1,5 +1,3 @@
-Here is the updated README reflecting the current state of your code, including the statistical analysis and agent components:
-
 # Strategic Deception Evaluation Framework
 
 This framework provides a structured approach to evaluate strategic deception in Large Language Models (LLMs) within test environments. It allows researchers to assess how LLMs behave when given control over certain environment mechanics, comparing their actions against expected fair play distributions.
