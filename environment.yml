@@ -1,0 +1,10 @@
+name: deception.apartresearch
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - langchain
+  - tqdm
+  - seaborn
+  - matplotlib
+prefix: /opt/homebrew/Caskroom/miniforge/base/envs/deception.apartresearch
