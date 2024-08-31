@@ -239,6 +239,12 @@ class Deck:
         name, value = random.choice(self.cards)
         return Card(name, value)
 
+    def get_value(self, name):
+        """
+        Returns the value of a card given the name.
+        """
+        return next((value for card, value in self.cards if card.lower() == name.lower()), None)
+
 class Player:
     """
     Represents a player in the Blackjack game.

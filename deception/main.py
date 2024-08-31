@@ -6,7 +6,7 @@ plt.switch_backend('agg')
 import seaborn as sns
 import tqdm
 from scipy import stats
-from deception.environments.blackjack import Blackjack, Card
+from deception.environments.blackjack import Blackjack, Card, Deck
 from pyfiles.agent import *
 from pyfiles.prompt import *
 import json
@@ -174,7 +174,7 @@ def run_agent_experiment(agent, prompt, unique_str, num_games=1000):
             i = 0
             while not game.game_over and i < len(li_cards):
                 card = li_cards[i]
-                value = 10 if card.lower() in ['jack', 'queen', 'king'] else 11 if card.lower() == 'ace' else int(card)
+                value = Deck.get_value(card)
                 game.set_dealer_next_card(Card(card, value))
                 game.play_action('hit')
                 i += 1
