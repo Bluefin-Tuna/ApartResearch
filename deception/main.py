@@ -10,8 +10,10 @@ from scipy import stats
 from deception.environments.blackjack import Blackjack
 from pyfiles.agent import *
 from pyfiles.prompt import *
+from pyfiles.statistical_analysis import *
 import json
 from pyfiles.utils import random_draw_card
+import ast
 
 DATA_FOLDER = "results"
 
@@ -189,20 +191,64 @@ def run_control_experiment(num_games):
 #     results_df.to_csv('./analysis/ks_test_results.csv', index=False)
 #     print(f"K-S test results have been saved to ks_test_results.csv")
 
+def run_statistical_analysis(control_file, experiment_file):
+    control_results_df = pd.read_csv(f'{DATA_FOLDER}/{control_file}')
+    experiment_results_df = pd.read_csv(f'{DATA_FOLDER}/{experiment_file}')
+
+    # run stat tests on card frequencies, hand values
+    control_results_df['dealer_hand'] = control_results_df["dealer_hand"].apply(lambda x: ast.literal_eval(x))
+    control_results_df["player_hand"] = control_results_df["player_hand"].apply(lambda x: ast.literal_eval(x))
+    experiment_results_df["dealer_hand"] = experiment_results_df["dealer_hand"].apply(lambda x: ast.literal_eval(x))
+    experiment_results_df["player_hand"] = experiment_results_df["player_hand"].apply(lambda x: ast.literal_eval(x))
+  
+    kl_div_dealer_card_freqs = compute_kl_divergence(control_results_df, experiment_results_df, 'dealer_hand')
+    kl_div_player_card_freqs = compute_kl_divergence(control_results_df, experiment_results_df, 'player_hand')
+    print("KL Divergence for Dealer Card Frequencies: ", kl_div_dealer_card_freqs)
+    print("KL Divergence for Player Card Frequencies: ", kl_div_player_card_freqs)
+    
+    js_distance_dealer_card_freqs = compute_jensenshannon_distance(control_results_df, experiment_results_df, 'dealer_hand')
+    js_distance_player_card_freqs = compute_jensenshannon_distance(control_results_df, experiment_results_df, 'player_hand')
+    print("Jensen-Shannon Distance for Dealer Card Frequencies: ", js_distance_dealer_card_freqs)
+    print("Jensen-Shannon Distance for Player Card Frequencies: ", js_distance_player_card_freqs)
+
+    chi2_dealer_card_freqs, chi2_pval_dealer_card_freqs = chi_squared_test(control_results_df, experiment_results_df, 'dealer_hand')
+    chi2_player_card_freqs, chi2_pval_player_card_freqs = chi_squared_test(control_results_df, experiment_results_df, 'player_hand')
+    print('Chi-Squared Test for Dealer Card Frequences: ', chi2_dealer_card_freqs, chi2_pval_dealer_card_freqs)
+    print('Chi-Squared Test for Player Card Frequences: ', chi2_player_card_freqs, chi2_pval_player_card_freqs)
+
+    ks_dealer_card_freqs = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'dealer_hand')
+    ks_player_card_freqs = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'player_hand')
+    print("Kolmogorov-Smirnov Test for Dealer Card Frequencies: ", ks_dealer_card_freqs)
+    print("Kolmogorov-Smirnov Test  for Player Card Frequencies: ", ks_player_card_freqs)
+    
+    print('================================')
+
+    kl_div_dealer_hand_value = compute_kl_divergence(control_results_df, experiment_results_df, 'dealer_hand_value')
+    kl_div_player_hand_value = compute_kl_divergence(control_results_df, experiment_results_df, 'player_hand_value')
+    print("KL Divergence for Dealer Final Hand Values: ", kl_div_dealer_hand_value)
+    print("KL Divergence for Player Final Hand Values: ", kl_div_player_hand_value)
+
+    chi2_dealer_hand_value, chi2_pval_dealer_hand_value = chi_squared_test(control_results_df, experiment_results_df, 'dealer_hand_value')
+    chi2_player_hand_value, chi2_pval_player_hand_value = chi_squared_test(control_results_df, experiment_results_df, 'player_hand_value')
+    print('Chi-Squared Test for Dealer Final Hand Values: ', chi2_dealer_hand_value, chi2_pval_dealer_hand_value)
+    print('Chi-Squared Test for Player Final Hand Values: ', chi2_player_hand_value, chi2_pval_player_hand_value)
+
+    ks_dealer_hand_value = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'dealer_hand_value')
+    ks_player_hand_value = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'player_hand_value')
+    print("Kolmogorov-Smirnov Test for Dealer Final Hand Values: ", ks_dealer_hand_value)
+    print("Kolmogorov-Smirnov Test  for Player Final Hand Values: ", ks_player_hand_value)
+
+    ad_dealer_hand_value = anderson_darling_test(control_results_df, experiment_results_df, 'dealer_hand_value')
+    ad_player_hand_value = anderson_darling_test(control_results_df, experiment_results_df, 'player_hand_value')
+    print("Anderson-Darling Test for Dealer Final Hand Values: ", ad_dealer_hand_value)
+    print("Anderson-Darling Test  for Player Final Hand Values: ", ad_player_hand_value)
+
 if __name__ == "__main__":
 
-    NUM_GAMES = 100000
+    run_statistical_analysis('baseline_game_results.csv', 'baseline_game_results_1.csv')
+    # NUM_GAMES = 100000
 
-    import ast
-    run_control_experiment(NUM_GAMES)
-    results_df = pd.read_csv("results/baseline_game_results.csv")
-    results_df["dealer_hand"].apply(lambda x: ast.literal_eval(x))
-    results_df["player_hand"].apply(lambda x: ast.literal_eval(x))
-
-    import pdb
-    pdb.set_trace()
-
-    # run_experiment(NUM_GAMES)
+    # run_control_experiment(NUM_GAMES)
     
     # thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
