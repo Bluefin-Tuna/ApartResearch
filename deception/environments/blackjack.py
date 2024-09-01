@@ -104,7 +104,7 @@ class Blackjack():
 
         return {
             'player_win': player_win, 
-            'dealer_win': 1 - player_win, 
+            'dealer_win': 1 if player_win == 0 else 0, 
             'dealer_bust': int(dealer_value > 21), 
             'player_hand_value': player_value, 
             'dealer_hand_value': dealer_value,
