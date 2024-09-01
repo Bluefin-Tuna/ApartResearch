@@ -1,5 +1,3 @@
-import random
-
 class Player():
     def __init__(self, deck):
         self.deck = deck
@@ -80,11 +78,15 @@ class Blackjack():
         player_value = self.player.hand_value()
 
         if player_value > 21:
-            return {'player_win': 0, 
-                    'dealer_win': 1, 
-                    'dealer_bust': 0, 
-                    'player_hand_value': player_value, 
-                    'dealer_hand_value': self.dealer.hand_value()}
+            return {
+                'player_win': 0, 
+                'dealer_win': 1, 
+                'dealer_bust': 0, 
+                'player_hand_value': player_value, 
+                'dealer_hand_value': self.dealer.hand_value(),
+                'player_hand': self.player.hand,
+                'dealer_hand': self.dealer.hand
+            }
 
         while self.dealer.hand_value() < 17:
             self.dealer.hit()
@@ -100,8 +102,12 @@ class Blackjack():
         else:
             player_win = 0      # Dealer is closer to 21 than player
 
-        return {'player_win': player_win, 
-                'dealer_win': 1 - player_win, 
-                'dealer_bust': int(dealer_value > 21), 
-                'player_hand_value': player_value, 
-                'dealer_hand_value': dealer_value}
+        return {
+            'player_win': player_win, 
+            'dealer_win': 1 - player_win, 
+            'dealer_bust': int(dealer_value > 21), 
+            'player_hand_value': player_value, 
+            'dealer_hand_value': dealer_value,
+            'player_hand': self.player.hand,
+            'dealer_hand': self.dealer.hand
+        }
