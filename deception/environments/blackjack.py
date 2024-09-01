@@ -1,9 +1,4 @@
-import random
 from collections import Counter
-
-def random_draw_card():
-    cards = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'] * 4
-    return random.choice(cards)
 
 class Player():
     def __init__(self, deck):
@@ -45,7 +40,7 @@ class Deck():
         return value
 
 class Blackjack():
-    def __init__(self, draw_card_fn = random_draw_card):
+    def __init__(self, draw_card_fn, prompt = None):
         """
         draw_card_fn: returns a string corresponding to a card
           i.e. 'ace', 'king', 'queen', 'jack', '2', '3', '4', ...
@@ -89,6 +84,7 @@ class Blackjack():
             return {
                 'player_win': 0, 
                 'dealer_win': 1, 
+                'push': push,
                 'dealer_bust': 0, 
                 'player_hand_value': player_value, 
                 'dealer_hand_value': self.dealer.hand_value(),

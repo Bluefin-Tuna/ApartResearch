@@ -11,6 +11,7 @@ from deception.environments.blackjack import Blackjack
 from pyfiles.agent import *
 from pyfiles.prompt import *
 import json
+from pyfiles.utils import random_draw_card
 
 DATA_FOLDER = "results"
 
@@ -19,12 +20,14 @@ def run_control_experiment(num_games):
     pbar = tqdm.tqdm(range(num_games))
 
     for game_id in pbar:
-        game = Blackjack()
+        game = Blackjack(random_draw_card)
         result = game.play()
         results.append(result)
         pbar.set_description(desc=f"Game {game_id}")
 
     results_df = pd.DataFrame(results)
+    results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
+    results_df["player_hand"] = results_df["player_hand"].apply(lambda x: dict(x))
     results_df.to_csv(f'{DATA_FOLDER}/baseline_game_results.csv', index=False)
 
     summary_stats = {
@@ -78,17 +81,19 @@ def run_control_experiment(num_games):
     print("Experiment completed. Data saved to CSV files. Plots generated.")
 
 # def run_agent_experiment(agent, prompt, unique_str, num_games=1000):
+
+#     draw_card_fn = lambda : agent.invoke
+
 #     results = []
 #     pbar = tqdm.tqdm(range(num_games))
-
 #     for game_id in pbar:
-#         game = Blackjack()
+#         game = Blackjack(draw_card_fn)
 #         result = game.play()
 #         results.append(result)
 #         pbar.set_description(desc=f"Game {game_id}")
 
 #     results_df = pd.DataFrame(results)
-#     results_df.to_csv(f'{DATA_FOLDER}/baseline_game_results.csv', index=False)
+#     results_df.to_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv', index=False)
 
 #     summary_stats = {
 #         'total_games': num_games,
@@ -99,7 +104,7 @@ def run_control_experiment(num_games):
 #         'avg_dealer_hand': results_df['dealer_hand_value'].mean()
 #     }
 
-#     with open(f'{DATA_FOLDER}/summary_stats.csv', 'w', newline='') as f:
+#     with open(f'{DATA_FOLDER}/{unique_str}_summary_stats.csv', 'w', newline='') as f:
 #         writer = csv.writer(f)
 #         for key, value in summary_stats.items():
 #             writer.writerow([key, value])
@@ -116,7 +121,7 @@ def run_control_experiment(num_games):
 #     plt.xticks(range(int(results_df['player_hand_value'].min()), int(results_df['player_hand_value'].max()) + 1))
 #     plt.legend(fontsize=10)
 #     plt.tight_layout()
-#     plt.savefig(f'{DATA_FOLDER}/hand_value_distributions.png', dpi=300)
+#     plt.savefig(f'{DATA_FOLDER}/{unique_str}_hand_value_distributions.png', dpi=300)
 #     plt.close()
 
 #     CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
@@ -135,7 +140,7 @@ def run_control_experiment(num_games):
 #     plt.ylabel('Frequency', fontsize=12)
 #     plt.xticks(rotation=45)
 #     plt.tight_layout()
-#     plt.savefig(f'{DATA_FOLDER}/card_frequency.png', dpi=300)
+#     plt.savefig(f'{DATA_FOLDER}/{unique_str}_card_frequency.png', dpi=300)
 #     plt.close()
 
 #     print("Experiment completed. Data saved to CSV files. Plots generated.")
@@ -188,7 +193,14 @@ if __name__ == "__main__":
 
     NUM_GAMES = 100000
 
+    import ast
     run_control_experiment(NUM_GAMES)
+    results_df = pd.read_csv("results/baseline_game_results.csv")
+    results_df["dealer_hand"].apply(lambda x: ast.literal_eval(x))
+    results_df["player_hand"].apply(lambda x: ast.literal_eval(x))
+
+    import pdb
+    pdb.set_trace()
 
     # run_experiment(NUM_GAMES)
     
