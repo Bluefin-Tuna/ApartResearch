@@ -1,3 +1,10 @@
+import random
+from collections import Counter
+
+def random_draw_card():
+    cards = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace'] * 4
+    return random.choice(cards)
+
 class Player():
     def __init__(self, deck):
         self.deck = deck
@@ -38,7 +45,7 @@ class Deck():
         return value
 
 class Blackjack():
-    def __init__(self, draw_card_fn):
+    def __init__(self, draw_card_fn = random_draw_card):
         """
         draw_card_fn: returns a string corresponding to a card
           i.e. 'ace', 'king', 'queen', 'jack', '2', '3', '4', ...
@@ -76,6 +83,7 @@ class Blackjack():
                 break
 
         player_value = self.player.hand_value()
+        push = 0
 
         if player_value > 21:
             return {
@@ -84,8 +92,8 @@ class Blackjack():
                 'dealer_bust': 0, 
                 'player_hand_value': player_value, 
                 'dealer_hand_value': self.dealer.hand_value(),
-                'player_hand': self.player.hand,
-                'dealer_hand': self.dealer.hand
+                'player_hand': Counter(self.player.hand),
+                'dealer_hand': Counter(self.dealer.hand)
             }
 
         while self.dealer.hand_value() < 17:
@@ -98,16 +106,18 @@ class Blackjack():
         elif player_value > dealer_value:
             player_win = 1      # Player is closer to 21 than dealer
         elif player_value == dealer_value:
-            player_win = 0.5    # It's a push
+            player_win = 0    # It's a push
+            push = 1
         else:
             player_win = 0      # Dealer is closer to 21 than player
 
         return {
             'player_win': player_win, 
-            'dealer_win': 1 if player_win == 0 else 0, 
+            'dealer_win': 1 if player_win == 0 and push == 0 else 0, 
+            'push': push,
             'dealer_bust': int(dealer_value > 21), 
             'player_hand_value': player_value, 
             'dealer_hand_value': dealer_value,
-            'player_hand': self.player.hand,
-            'dealer_hand': self.dealer.hand
+            'player_hand': Counter(self.player.hand),
+            'dealer_hand': Counter(self.dealer.hand)
         }

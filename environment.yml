@@ -7,4 +7,3 @@ dependencies:
   - tqdm
   - seaborn
   - matplotlib
-prefix: /opt/homebrew/Caskroom/miniforge/base/envs/deception.apartresearch
