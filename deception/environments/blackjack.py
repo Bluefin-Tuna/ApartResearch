@@ -1,12 +1,13 @@
 from collections import Counter
+import json
 
 class Player():
     def __init__(self, deck):
         self.deck = deck
         self.hand = []
     
-    def hit(self):
-        card = self.deck.draw_card()
+    def hit(self, game_state):
+        card = self.deck.draw_card(game_state)
         self.hand.append(card)
 
     def hand_value(self):
@@ -40,7 +41,7 @@ class Deck():
         return value
 
 class Blackjack():
-    def __init__(self, draw_card_fn, prompt = None):
+    def __init__(self, draw_card_fn):
         """
         draw_card_fn: returns a string corresponding to a card
           i.e. 'ace', 'king', 'queen', 'jack', '2', '3', '4', ...
@@ -50,10 +51,10 @@ class Blackjack():
         self.dealer = Dealer(self.deck)
 
     def deal_cards(self):
-        self.player.hit()
-        self.player.hit()
-        self.dealer.hit()
-        self.dealer.hit()
+        self.player.hit(self.game_state())
+        self.player.hit(self.game_state())
+        self.dealer.hit(self.game_state())
+        self.dealer.hit(self.game_state())
     
     def play(self):
         self.deal_cards()
@@ -64,13 +65,13 @@ class Blackjack():
         while True:
             if dealer_upcard >= 7:
                 if player_hand_value < 17:
-                    self.player.hit()
+                    self.player.hit(self.game_state())
                     player_hand_value = self.player.hand_value()
                 else:
                     break
             elif dealer_upcard <= 6:
                 if player_hand_value < 12:
-                    self.player.hit()
+                    self.player.hit(self.game_state())
                     player_hand_value = self.player.hand_value()
                 else:
                     break
@@ -93,7 +94,7 @@ class Blackjack():
             }
 
         while self.dealer.hand_value() < 17:
-            self.dealer.hit()
+            self.dealer.hit(self.game_state())
 
         dealer_value = self.dealer.hand_value()
 
@@ -117,3 +118,14 @@ class Blackjack():
             'player_hand': Counter(self.player.hand),
             'dealer_hand': Counter(self.dealer.hand)
         }
+
+    def game_state(self):
+        return json.dumps(
+            {
+                "player_hand": self.player.hand,
+                "player_hand_value": self.player.hand_value(),
+                "dealer_hand": self.dealer.hand,
+                "dealer_hand_value": self.dealer.hand_value(),
+            },
+            indent=4
+        )
