@@ -22,7 +22,6 @@ def get_latest_checkpoint(unique_str):
     """Find the latest checkpoint file if one exists."""
     checkpoint_files = [f for f in os.listdir(DATA_FOLDER) if f.startswith(unique_str) and f.endswith('.pkl')]
     if checkpoint_files:
-        # Find the file with the highest game number in the filename
         checkpoint_files.sort(key=lambda f: int(f.split('_')[-1].replace('.pkl', '')))
         return os.path.join(DATA_FOLDER, checkpoint_files[-1])
     return None
@@ -43,7 +42,6 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         results = load_checkpoint(latest_checkpoint)
         start_game_id = int(latest_checkpoint.split('_')[-1].replace('.pkl', ''))
         previous_file = latest_checkpoint
-        print(f"Resuming from checkpoint {latest_checkpoint}, starting at game {start_game_id + 1}")
 
     pbar = tqdm.tqdm(range(start_game_id, num_games))
 
@@ -53,27 +51,21 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         results.append(result)
         pbar.set_description(desc=f"Game {game_id}")
         
-        # Save results every 100 games
         if (game_id + 1) % 100 == 0:
             pickle_filename = f'{DATA_FOLDER}/{unique_str}_game_results_{game_id+1}.pkl'
             with open(pickle_filename, 'wb') as f:
                 pickle.dump(results, f)
-            print(f"Saved {game_id+1} games results to pickle.")
 
-            # Delete the previous pickle file if it exists
             if previous_file and os.path.exists(previous_file):
                 os.remove(previous_file)
-                print(f"Deleted previous checkpoint: {previous_file}")
             
             previous_file = pickle_filename
 
-    # Final save to CSV after all games are completed
     results_df = pd.DataFrame(results)
     results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
     results_df["player_hand"] = results_df["player_hand"].apply(lambda x: dict(x))
     results_df.to_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv', index=False)
 
-    # Calculate summary statistics
     summary_stats = {
         'total_games': num_games,
         'player_win_rate': results_df['player_win'].mean(),
@@ -88,7 +80,6 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         for key, value in summary_stats.items():
             writer.writerow([key, value])
 
-    # Visualization: Hand value distributions
     sns.set_style("whitegrid")
     sns.set_palette("muted")
 
@@ -104,7 +95,6 @@ def run_experiment(num_games, draw_card_fn, unique_str):
     plt.savefig(f'{DATA_FOLDER}/{unique_str}_hand_value_distributions.png', dpi=300)
     plt.close()
 
-    # Visualization: Card draw frequency
     CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
     dealer_hands = results_df['dealer_hand']
     player_hands = results_df['player_hand']
