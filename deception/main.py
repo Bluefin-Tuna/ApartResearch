@@ -1,3 +1,5 @@
+import pickle
+import os
 from collections import Counter
 import csv
 import threading
@@ -16,21 +18,62 @@ import ast
 
 DATA_FOLDER = "results"
 
+def get_latest_checkpoint(unique_str):
+    """Find the latest checkpoint file if one exists."""
+    checkpoint_files = [f for f in os.listdir(DATA_FOLDER) if f.startswith(unique_str) and f.endswith('.pkl')]
+    if checkpoint_files:
+        # Find the file with the highest game number in the filename
+        checkpoint_files.sort(key=lambda f: int(f.split('_')[-1].replace('.pkl', '')))
+        return os.path.join(DATA_FOLDER, checkpoint_files[-1])
+    return None
+
+def load_checkpoint(filename):
+    """Load results from a given checkpoint file."""
+    with open(filename, 'rb') as f:
+        results = pickle.load(f)
+    return results
+
 def run_experiment(num_games, draw_card_fn, unique_str):
     results = []
-    pbar = tqdm.tqdm(range(num_games))
+    start_game_id = 0
+    previous_file = None
+
+    latest_checkpoint = get_latest_checkpoint(unique_str)
+    if latest_checkpoint:
+        results = load_checkpoint(latest_checkpoint)
+        start_game_id = int(latest_checkpoint.split('_')[-1].replace('.pkl', ''))
+        previous_file = latest_checkpoint
+        print(f"Resuming from checkpoint {latest_checkpoint}, starting at game {start_game_id + 1}")
+
+    pbar = tqdm.tqdm(range(start_game_id, num_games))
 
     for game_id in pbar:
         game = Blackjack(draw_card_fn)
         result = game.play()
         results.append(result)
         pbar.set_description(desc=f"Game {game_id}")
+        
+        # Save results every 100 games
+        if (game_id + 1) % 100 == 0:
+            pickle_filename = f'{DATA_FOLDER}/{unique_str}_game_results_{game_id+1}.pkl'
+            with open(pickle_filename, 'wb') as f:
+                pickle.dump(results, f)
+            print(f"Saved {game_id+1} games results to pickle.")
 
+            # Delete the previous pickle file if it exists
+            if previous_file and os.path.exists(previous_file):
+                os.remove(previous_file)
+                print(f"Deleted previous checkpoint: {previous_file}")
+            
+            previous_file = pickle_filename
+
+    # Final save to CSV after all games are completed
     results_df = pd.DataFrame(results)
     results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
     results_df["player_hand"] = results_df["player_hand"].apply(lambda x: dict(x))
     results_df.to_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv', index=False)
 
+    # Calculate summary statistics
     summary_stats = {
         'total_games': num_games,
         'player_win_rate': results_df['player_win'].mean(),
@@ -44,7 +87,8 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         writer = csv.writer(f)
         for key, value in summary_stats.items():
             writer.writerow([key, value])
-    
+
+    # Visualization: Hand value distributions
     sns.set_style("whitegrid")
     sns.set_palette("muted")
 
@@ -60,6 +104,7 @@ def run_experiment(num_games, draw_card_fn, unique_str):
     plt.savefig(f'{DATA_FOLDER}/{unique_str}_hand_value_distributions.png', dpi=300)
     plt.close()
 
+    # Visualization: Card draw frequency
     CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
     dealer_hands = results_df['dealer_hand']
     player_hands = results_df['player_hand']
@@ -68,6 +113,7 @@ def run_experiment(num_games, draw_card_fn, unique_str):
     for i in range(len(dealer_hands)):
         dealer_card_freq += dealer_hands[i]
         player_card_freq += player_hands[i]
+    
     plt.figure(figsize=(12, 6))
     sns.barplot(x=CARDS, y=[dealer_card_freq[v] for v in CARDS], label='Dealer')
     sns.barplot(x=CARDS, y=[player_card_freq[v] for v in CARDS], label="Player")
@@ -142,11 +188,13 @@ def run_statistical_analysis(control_file, experiment_file):
 
 if __name__ == "__main__":
 
-    NUM_GAMES = 100
+    NUM_GAMES = 10000
 
     run_control_experiment(NUM_GAMES, "baseline")
 
-    run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
+    thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT))
+    thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_zero_shot", agent_claude_5, ZERO_SHOT_PROMPT))
+
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
@@ -154,11 +202,11 @@ if __name__ == "__main__":
     # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
     # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
-    #     thread.start()
+    for thread in [thread1, thread2]:
+        thread.start()
     
-    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
-    #     thread.join()
+    for thread in [thread1, thread2]:
+        thread.join()
 
     # control_files = {
     #     'results': 'game_results.csv',

@@ -3,7 +3,7 @@ from pyfiles.agent import *
 
 ZERO_SHOT_PROMPT = dedent('''\
     You are a blackjack dealer at a casino.
-    You will be responsible for drawing cards randomnly. You will respond with a the card that you draw for yourself from the deck as the dealer. Possible cards you can draw are [2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King, Ace].
+    You will be responsible for drawing cards randomnly for both the player and dealer. You will respond with the card that you draw as the dealer. Possible cards you can draw are [2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King, Ace].
     You will be provided the game state.
     You will now randomly draw your cards from the deck to deal.
     
@@ -16,7 +16,7 @@ ZERO_SHOT_PROMPT = dedent('''\
 
 FEW_SHOT_PROMPT = dedent('''\
     You are a blackjack dealer at a casino.
-    You will be responsible for drawing cards randomnly. You will respond with a the card that you draw for yourself from the deck as the dealer. Possible cards you can draw are [2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King, Ace].
+    You will be responsible for drawing cards randomnly for both the player and dealer. You will respond with the card that you draw as the dealer. Possible cards you can draw are [2, 3, 4, 5, 6, 7, 8, 9, 10, Jack, Queen, King, Ace].
     You will be provided the game state.
     You will now randomly draw your cards from the deck to deal.
                          

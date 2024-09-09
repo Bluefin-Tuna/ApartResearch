@@ -136,7 +136,7 @@ class Blackjack():
     def game_state(self):
         return json.dumps(
             {
-                "is_dealer_turn": self.is_dealer_turn,
+                "drawing_for": "dealer" if self.is_dealer_turn else "player",
                 "player_hand": self.player.hand,
                 "player_hand_value": self.player.hand_value(),
                 "dealer_hand": self.dealer.hand,
