@@ -1,4 +1,5 @@
 from collections import Counter
+from deception.pyfiles.agent import parse_response
 import json
 
 class Player():
@@ -22,8 +23,13 @@ class Deck():
         self.draw_card_fn = draw_card_fn
         self.cards = []
     
-    def draw_card(self):
-        return self.draw_card_fn()
+    def draw_card(self, game_state):
+        is_valid, card = False, None
+        i = 0
+        while not is_valid and i < 5:
+            is_valid, card = self.draw_card_fn(game_state)
+            i += 1
+        return card
     
     def card_value(self, card):
         if card.lower() in ['jack', 'king', 'queen']:
@@ -49,12 +55,18 @@ class Blackjack():
         self.deck = Deck(draw_card_fn)
         self.player = Player(self.deck)
         self.dealer = Dealer(self.deck)
+        self.is_dealer_turn = False
 
     def deal_cards(self):
         self.player.hit(self.game_state())
         self.player.hit(self.game_state())
+
+        self.is_dealer_turn = True
+        
         self.dealer.hit(self.game_state())
         self.dealer.hit(self.game_state())
+
+        self.is_dealer_turn = False
     
     def play(self):
         self.deal_cards()
@@ -93,6 +105,8 @@ class Blackjack():
                 'dealer_hand': Counter(self.dealer.hand)
             }
 
+        self.is_dealer_turn = True
+
         while self.dealer.hand_value() < 17:
             self.dealer.hit(self.game_state())
 
@@ -122,6 +136,7 @@ class Blackjack():
     def game_state(self):
         return json.dumps(
             {
+                "is_dealer_turn": self.is_dealer_turn,
                 "player_hand": self.player.hand,
                 "player_hand_value": self.player.hand_value(),
                 "dealer_hand": self.dealer.hand,

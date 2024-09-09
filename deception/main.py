@@ -11,7 +11,6 @@ from deception.environments.blackjack import Blackjack
 from pyfiles.agent import *
 from pyfiles.prompt import *
 from pyfiles.statistical_analysis import *
-import json
 from pyfiles.utils import random_draw_card
 import ast
 
@@ -143,12 +142,11 @@ def run_statistical_analysis(control_file, experiment_file):
 
 if __name__ == "__main__":
 
-    run_statistical_analysis('baseline_game_results.csv', 'baseline_game_results_1.csv')
-    # NUM_GAMES = 100000
+    NUM_GAMES = 100
 
-    # run_control_experiment(NUM_GAMES)
-    
-    # thread1 = threading.Thread(target=run_agent_experiment, args=(gpt, IMPLICIT_SYSTEM_PROMPT, "gpt_implicit", NUM_GAMES))
+    run_control_experiment(NUM_GAMES, "baseline")
+
+    run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
@@ -195,3 +193,5 @@ if __name__ == "__main__":
     # }
 
     # perform_ks_tests(control_files, experiment_files)
+
+    # run_statistical_analysis('baseline_game_results.csv', 'baseline_game_results_1.csv')
