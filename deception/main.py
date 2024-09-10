@@ -1,5 +1,3 @@
-import pickle
-import os
 from collections import Counter
 import csv
 import threading
@@ -18,68 +16,13 @@ import ast
 
 DATA_FOLDER = "results"
 
-def get_latest_checkpoint(unique_str):
-    """Find the latest checkpoint file if one exists."""
-    checkpoint_files = [f for f in os.listdir(DATA_FOLDER) if f.startswith(unique_str) and f.endswith('.pkl')]
-    if checkpoint_files:
-        checkpoint_files.sort(key=lambda f: int(f.split('_')[-1].replace('.pkl', '')))
-        return os.path.join(DATA_FOLDER, checkpoint_files[-1])
-    return None
-
-def load_checkpoint(filename):
-    """Load results from a given checkpoint file."""
-    with open(filename, 'rb') as f:
-        results = pickle.load(f)
-    return results
-
-def run_experiment(num_games, draw_card_fn, unique_str):
-    results = []
-    start_game_id = 0
-    previous_file = None
-
-    latest_checkpoint = get_latest_checkpoint(unique_str)
-    if latest_checkpoint:
-        results = load_checkpoint(latest_checkpoint)
-        start_game_id = int(latest_checkpoint.split('_')[-1].replace('.pkl', ''))
-        previous_file = latest_checkpoint
-
-    pbar = tqdm.tqdm(range(start_game_id, num_games))
-
-    for game_id in pbar:
-        game = Blackjack(draw_card_fn)
-        result = game.play()
-        results.append(result)
-        pbar.set_description(desc=f"Game {game_id}")
-        
-        if (game_id + 1) % 100 == 0:
-            pickle_filename = f'{DATA_FOLDER}/{unique_str}_game_results_{game_id+1}.pkl'
-            with open(pickle_filename, 'wb') as f:
-                pickle.dump(results, f)
-
-            if previous_file and os.path.exists(previous_file):
-                os.remove(previous_file)
-            
-            previous_file = pickle_filename
-
-    results_df = pd.DataFrame(results)
-    results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
-    results_df["player_hand"] = results_df["player_hand"].apply(lambda x: dict(x))
-    results_df.to_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv', index=False)
-
-    summary_stats = {
-        'total_games': num_games,
-        'player_win_rate': results_df['player_win'].mean(),
-        'dealer_bust_rate': results_df['dealer_bust'].mean(),
-        'push_rate': results_df['push'].mean(),
-        'avg_player_hand': results_df['player_hand_value'].mean(),
-        'avg_dealer_hand': results_df['dealer_hand_value'].mean()
-    }
-
+def create_plots(unique_str, summary_stats, results_df):
+    
     with open(f'{DATA_FOLDER}/{unique_str}_summary_stats.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         for key, value in summary_stats.items():
             writer.writerow([key, value])
-
+    
     sns.set_style("whitegrid")
     sns.set_palette("muted")
 
@@ -103,7 +46,6 @@ def run_experiment(num_games, draw_card_fn, unique_str):
     for i in range(len(dealer_hands)):
         dealer_card_freq += dealer_hands[i]
         player_card_freq += player_hands[i]
-    
     plt.figure(figsize=(12, 6))
     sns.barplot(x=CARDS, y=[dealer_card_freq[v] for v in CARDS], label='Dealer')
     sns.barplot(x=CARDS, y=[player_card_freq[v] for v in CARDS], label="Player")
@@ -116,6 +58,32 @@ def run_experiment(num_games, draw_card_fn, unique_str):
     plt.close()
 
     print("Experiment completed. Data saved to CSV files. Plots generated.")
+
+def run_experiment(num_games, draw_card_fn, unique_str):
+    results = []
+    pbar = tqdm.tqdm(range(num_games))
+
+    for game_id in pbar:
+        game = Blackjack(draw_card_fn)
+        result = game.play()
+        results.append(result)
+        pbar.set_description(desc=f"Game {game_id}")
+
+    results_df = pd.DataFrame(results)
+    results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
+    results_df["player_hand"] = results_df["player_hand"].apply(lambda x: dict(x))
+    results_df.to_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv', index=False)
+
+    summary_stats = {
+        'total_games': num_games,
+        'player_win_rate': results_df['player_win'].mean(),
+        'dealer_bust_rate': results_df['dealer_bust'].mean(),
+        'push_rate': results_df['push'].mean(),
+        'avg_player_hand': results_df['player_hand_value'].mean(),
+        'avg_dealer_hand': results_df['dealer_hand_value'].mean()
+    }
+
+    create_plots(unique_str, summary_stats, results_df)
 
 def run_control_experiment(num_games, unique_str):
     run_experiment(num_games, random_draw_card, unique_str)
@@ -178,13 +146,11 @@ def run_statistical_analysis(control_file, experiment_file):
 
 if __name__ == "__main__":
 
-    NUM_GAMES = 10000
+    NUM_GAMES = 100
 
     run_control_experiment(NUM_GAMES, "baseline")
 
-    thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT))
-    thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_zero_shot", agent_claude_5, ZERO_SHOT_PROMPT))
-
+    run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
@@ -192,11 +158,11 @@ if __name__ == "__main__":
     # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
     # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    for thread in [thread1, thread2]:
-        thread.start()
+    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
+    #     thread.start()
     
-    for thread in [thread1, thread2]:
-        thread.join()
+    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
+    #     thread.join()
 
     # control_files = {
     #     'results': 'game_results.csv',
