@@ -165,7 +165,9 @@ if __name__ == "__main__":
 
     run_control_experiment(NUM_GAMES, "baseline")
 
-    # run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
+    thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_zero_shot", agent_gpt_0, ZERO_SHOT_PROMPT))
+    thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_zero_shot", agent_claude_0, ZERO_SHOT_PROMPT))
+
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
@@ -173,11 +175,11 @@ if __name__ == "__main__":
     # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
     # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
-    #     thread.start()
+    for thread in [thread1, thread2]:
+        thread.start()
     
-    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6]:
-    #     thread.join()
+    for thread in [thread1, thread2]:
+        thread.join()
 
     # control_files = {
     #     'results': 'game_results.csv',
