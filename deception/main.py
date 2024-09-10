@@ -13,8 +13,21 @@ from pyfiles.prompt import *
 from pyfiles.statistical_analysis import *
 from pyfiles.utils import random_draw_card
 import ast
+import pickle
 
 DATA_FOLDER = "results"
+
+def get_latest_checkpoint(unique_str):
+    checkpoint_files = [f for f in os.listdir(DATA_FOLDER) if f.startswith(unique_str) and f.endswith('.pkl')]
+    if checkpoint_files:
+        checkpoint_files.sort(key=lambda f: int(f.split('_')[-1].replace('.pkl', '')))
+        return os.path.join(DATA_FOLDER, checkpoint_files[-1])
+    return None
+
+def load_checkpoint(filename):
+    with open(filename, 'rb') as f:
+        results = pickle.load(f)
+    return results
 
 def create_plots(unique_str):
     results_df = pd.read_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv')
@@ -70,13 +83,32 @@ def create_plots(unique_str):
 
 def run_experiment(num_games, draw_card_fn, unique_str):
     results = []
-    pbar = tqdm.tqdm(range(num_games))
+    start_game_id = 0
+    previous_file = None
+
+    latest_checkpoint = get_latest_checkpoint(unique_str)
+    if latest_checkpoint:
+        results = load_checkpoint(latest_checkpoint)
+        start_game_id = int(latest_checkpoint.split('_')[-1].replace('.pkl', ''))
+        previous_file = latest_checkpoint
+
+    pbar = tqdm.tqdm(range(start_game_id, num_games))
 
     for game_id in pbar:
         game = Blackjack(draw_card_fn)
         result = game.play()
         results.append(result)
         pbar.set_description(desc=f"Game {game_id}")
+        
+        if (game_id + 1) % 100 == 0:
+            pickle_filename = f'{DATA_FOLDER}/{unique_str}_game_results_{game_id+1}.pkl'
+            with open(pickle_filename, 'wb') as f:
+                pickle.dump(results, f)
+
+            if previous_file and os.path.exists(previous_file):
+                os.remove(previous_file)
+            
+            previous_file = pickle_filename
 
     results_df = pd.DataFrame(results)
     results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
@@ -91,13 +123,14 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         'avg_player_hand': results_df['player_hand_value'].mean(),
         'avg_dealer_hand': results_df['dealer_hand_value'].mean()
     }
-    
+
     with open(f'{DATA_FOLDER}/{unique_str}_summary_stats.csv', 'w', newline='') as f:
         writer = csv.writer(f)
         for key, value in summary_stats.items():
             writer.writerow([key, value])
-
+    
     print("Experiment completed. Data saved to CSV files.")
+    
     create_plots(unique_str)
 
 def run_control_experiment(num_games, unique_str):
