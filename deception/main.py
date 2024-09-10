@@ -16,40 +16,49 @@ import ast
 
 DATA_FOLDER = "results"
 
-def create_plots(unique_str, summary_stats, results_df):
-    
-    with open(f'{DATA_FOLDER}/{unique_str}_summary_stats.csv', 'w', newline='') as f:
-        writer = csv.writer(f)
-        for key, value in summary_stats.items():
-            writer.writerow([key, value])
-    
-    sns.set_style("whitegrid")
-    sns.set_palette("muted")
+def create_plots(unique_str):
+    results_df = pd.read_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv')
+
+    results_df_melted = results_df.melt(value_vars=['player_hand_value', 'dealer_hand_value'], 
+                                        var_name='hand_type', 
+                                        value_name='hand_value')
 
     plt.figure(figsize=(12, 6))
-    sns.histplot(data=results_df, x='player_hand_value', fill=True, label='Player', binwidth=0.5, multiple='dodge')
-    sns.histplot(data=results_df, x='dealer_hand_value', fill=True, label='Dealer', binwidth=0.5, multiple='dodge')
-    plt.title('Distribution of Hand Values', fontsize=16)
+    sns.histplot(data=results_df_melted, x='hand_value', hue='hand_type', 
+                 fill=True, binwidth=0.5, multiple='dodge')
+    plt.title(f'Distribution of Hand Values ({unique_str})', fontsize=16)
     plt.xlabel('Hand Value', fontsize=12)
     plt.ylabel('Density', fontsize=12)
     plt.xticks(range(int(results_df['player_hand_value'].min()), int(results_df['player_hand_value'].max()) + 1))
-    plt.legend(fontsize=10)
     plt.tight_layout()
     plt.savefig(f'{DATA_FOLDER}/{unique_str}_hand_value_distributions.png', dpi=300)
     plt.close()
 
     CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
-    dealer_hands = results_df['dealer_hand']
-    player_hands = results_df['player_hand']
+    dealer_hands = results_df['dealer_hand'].apply(eval).apply(Counter)
+    player_hands = results_df['player_hand'].apply(eval).apply(Counter)
+    
     dealer_card_freq = Counter()
     player_card_freq = Counter()
-    for i in range(len(dealer_hands)):
-        dealer_card_freq += dealer_hands[i]
-        player_card_freq += player_hands[i]
+    for dealer_hand, player_hand in zip(dealer_hands, player_hands):
+        dealer_card_freq += dealer_hand
+        player_card_freq += player_hand
+    
+    dealer_df = pd.DataFrame(list(dealer_card_freq.items()), columns=['Card', 'Frequency'])
+    dealer_df['Type'] = 'Dealer'
+    
+    player_df = pd.DataFrame(list(player_card_freq.items()), columns=['Card', 'Frequency'])
+    player_df['Type'] = 'Player'
+    
+    combined_df = pd.concat([dealer_df, player_df])
+    
+    combined_df['Card'] = pd.Categorical(combined_df['Card'], categories=CARDS, ordered=True)
+    combined_df = combined_df.sort_values('Card')
+    
     plt.figure(figsize=(12, 6))
-    sns.barplot(x=CARDS, y=[dealer_card_freq[v] for v in CARDS], label='Dealer')
-    sns.barplot(x=CARDS, y=[player_card_freq[v] for v in CARDS], label="Player")
-    plt.title('Card Draw Frequency', fontsize=16)
+    ax = sns.histplot(data=combined_df, x='Card', weights='Frequency', hue='Type', 
+                      multiple='dodge', binwidth=0.5, discrete=True, element='bars')
+    plt.title(f'Card Draw Frequency ({unique_str})', fontsize=16)
     plt.xlabel('Card', fontsize=12)
     plt.ylabel('Frequency', fontsize=12)
     plt.xticks(rotation=45)
@@ -57,7 +66,7 @@ def create_plots(unique_str, summary_stats, results_df):
     plt.savefig(f'{DATA_FOLDER}/{unique_str}_card_frequency.png', dpi=300)
     plt.close()
 
-    print("Experiment completed. Data saved to CSV files. Plots generated.")
+    print("Plots generated.")
 
 def run_experiment(num_games, draw_card_fn, unique_str):
     results = []
@@ -82,8 +91,14 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         'avg_player_hand': results_df['player_hand_value'].mean(),
         'avg_dealer_hand': results_df['dealer_hand_value'].mean()
     }
+    
+    with open(f'{DATA_FOLDER}/{unique_str}_summary_stats.csv', 'w', newline='') as f:
+        writer = csv.writer(f)
+        for key, value in summary_stats.items():
+            writer.writerow([key, value])
 
-    create_plots(unique_str, summary_stats, results_df)
+    print("Experiment completed. Data saved to CSV files.")
+    create_plots(unique_str)
 
 def run_control_experiment(num_games, unique_str):
     run_experiment(num_games, random_draw_card, unique_str)
@@ -146,11 +161,11 @@ def run_statistical_analysis(control_file, experiment_file):
 
 if __name__ == "__main__":
 
-    NUM_GAMES = 100
+    NUM_GAMES = 10000
 
     run_control_experiment(NUM_GAMES, "baseline")
 
-    run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
+    # run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
 
