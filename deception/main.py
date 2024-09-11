@@ -30,7 +30,7 @@ def load_checkpoint(filename):
     return results
 
 def create_plots(unique_str):
-    results_df = pd.read_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv')
+    results_df = pd.read_csv(f'{DATA_FOLDER}/{unique_str}/{unique_str}_game_results.csv')
 
     results_df_melted = results_df.melt(value_vars=['player_hand_value', 'dealer_hand_value'], 
                                         var_name='hand_type', 
@@ -44,7 +44,7 @@ def create_plots(unique_str):
     plt.ylabel('Density', fontsize=12)
     plt.xticks(range(int(results_df['player_hand_value'].min()), int(results_df['player_hand_value'].max()) + 1))
     plt.tight_layout()
-    plt.savefig(f'{DATA_FOLDER}/{unique_str}_hand_value_distributions.png', dpi=300)
+    plt.savefig(f'{DATA_FOLDER}/{unique_str}/{unique_str}_hand_value_distributions.png', dpi=300)
     plt.close()
 
     CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
@@ -76,12 +76,16 @@ def create_plots(unique_str):
     plt.ylabel('Frequency', fontsize=12)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(f'{DATA_FOLDER}/{unique_str}_card_frequency.png', dpi=300)
+    plt.savefig(f'{DATA_FOLDER}/{unique_str}/{unique_str}_card_frequency.png', dpi=300)
     plt.close()
 
     print("Plots generated.")
 
 def run_experiment(num_games, draw_card_fn, unique_str):
+    unique_folder = os.path.join(DATA_FOLDER, unique_str)
+    if not os.path.exists(unique_folder):
+        os.makedirs(unique_folder)
+
     results = []
     start_game_id = 0
     previous_file = None
@@ -101,7 +105,7 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         pbar.set_description(desc=f"Game {game_id}")
         
         if (game_id + 1) % 100 == 0:
-            pickle_filename = f'{DATA_FOLDER}/{unique_str}_game_results_{game_id+1}.pkl'
+            pickle_filename = os.path.join(unique_folder, f'{unique_str}_game_results_{game_id+1}.pkl')
             with open(pickle_filename, 'wb') as f:
                 pickle.dump(results, f)
 
@@ -113,7 +117,7 @@ def run_experiment(num_games, draw_card_fn, unique_str):
     results_df = pd.DataFrame(results)
     results_df["dealer_hand"] = results_df["dealer_hand"].apply(lambda x: dict(x))
     results_df["player_hand"] = results_df["player_hand"].apply(lambda x: dict(x))
-    results_df.to_csv(f'{DATA_FOLDER}/{unique_str}_game_results.csv', index=False)
+    results_df.to_csv(os.path.join(unique_folder, f'{unique_str}_game_results.csv'), index=False)
 
     summary_stats = {
         'total_games': num_games,
@@ -124,7 +128,7 @@ def run_experiment(num_games, draw_card_fn, unique_str):
         'avg_dealer_hand': results_df['dealer_hand_value'].mean()
     }
 
-    with open(f'{DATA_FOLDER}/{unique_str}_summary_stats.csv', 'w', newline='') as f:
+    with open(os.path.join(unique_folder, f'{unique_str}_summary_stats.csv'), 'w', newline='') as f:
         writer = csv.writer(f)
         for key, value in summary_stats.items():
             writer.writerow([key, value])
@@ -198,11 +202,11 @@ if __name__ == "__main__":
 
     run_control_experiment(NUM_GAMES, "baseline")
 
-    thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_few_shot", agent_gpt_0, FEW_SHOT_PROMPT))
-    thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_few_shot", agent_claude_0, FEW_SHOT_PROMPT))
+    # thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_few_shot", agent_gpt_0, FEW_SHOT_PROMPT))
+    # thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_few_shot", agent_claude_0, FEW_SHOT_PROMPT))
 
-    thread3 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_few_shot", agent_gpt_5, FEW_SHOT_PROMPT))
-    thread4 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_few_shot", agent_claude_5, FEW_SHOT_PROMPT))
+    # thread3 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_few_shot", agent_gpt_5, FEW_SHOT_PROMPT))
+    # thread4 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_few_shot", agent_claude_5, FEW_SHOT_PROMPT))
 
     # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
     # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
@@ -211,11 +215,11 @@ if __name__ == "__main__":
     # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
     # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
 
-    for thread in [thread1, thread2, thread3, thread4]:
-        thread.start()
+    # for thread in [thread1, thread2, thread3, thread4]:
+    #     thread.start()
     
-    for thread in [thread1, thread2, thread3, thread4]:
-        thread.join()
+    # for thread in [thread1, thread2, thread3, thread4]:
+    #     thread.join()
 
     # control_files = {
     #     'results': 'game_results.csv',
