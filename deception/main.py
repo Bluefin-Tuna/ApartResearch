@@ -14,14 +14,16 @@ from pyfiles.statistical_analysis import *
 from pyfiles.utils import random_draw_card
 import ast
 import pickle
+import os
 
 DATA_FOLDER = "results"
 
 def get_latest_checkpoint(unique_str):
-    checkpoint_files = [f for f in os.listdir(DATA_FOLDER) if f.startswith(unique_str) and f.endswith('.pkl')]
+    unique_folder = os.path.join(DATA_FOLDER, unique_str)
+    checkpoint_files = [f for f in os.listdir(unique_folder) if f.startswith(unique_str) and f.endswith('.pkl')]
     if checkpoint_files:
         checkpoint_files.sort(key=lambda f: int(f.split('_')[-1].replace('.pkl', '')))
-        return os.path.join(DATA_FOLDER, checkpoint_files[-1])
+        return os.path.join(unique_folder, checkpoint_files[-1])
     return None
 
 def load_checkpoint(filename):
@@ -30,7 +32,8 @@ def load_checkpoint(filename):
     return results
 
 def create_plots(unique_str):
-    results_df = pd.read_csv(f'{DATA_FOLDER}/{unique_str}/{unique_str}_game_results.csv')
+    unique_folder = os.path.join(DATA_FOLDER, unique_str)
+    results_df = pd.read_csv(os.path.join(unique_folder, f'{unique_str}_game_results.csv'))
 
     results_df_melted = results_df.melt(value_vars=['player_hand_value', 'dealer_hand_value'], 
                                         var_name='hand_type', 
@@ -44,7 +47,7 @@ def create_plots(unique_str):
     plt.ylabel('Density', fontsize=12)
     plt.xticks(range(int(results_df['player_hand_value'].min()), int(results_df['player_hand_value'].max()) + 1))
     plt.tight_layout()
-    plt.savefig(f'{DATA_FOLDER}/{unique_str}/{unique_str}_hand_value_distributions.png', dpi=300)
+    plt.savefig(os.path.join(unique_folder, f'{unique_str}_hand_value_distributions.png'), dpi=300)
     plt.close()
 
     CARDS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'jack', 'queen', 'king', 'ace']
@@ -76,7 +79,7 @@ def create_plots(unique_str):
     plt.ylabel('Frequency', fontsize=12)
     plt.xticks(rotation=45)
     plt.tight_layout()
-    plt.savefig(f'{DATA_FOLDER}/{unique_str}/{unique_str}_card_frequency.png', dpi=300)
+    plt.savefig(os.path.join(unique_folder, f'{unique_str}_card_frequency.png'), dpi=300)
     plt.close()
 
     print("Plots generated.")
@@ -144,115 +147,125 @@ def run_agent_experiment(num_games, unique_str, agent, prompt):
     draw_card_fn = get_draw_card_fn(agent, prompt)
     run_experiment(num_games, draw_card_fn, unique_str)
 
-def run_statistical_analysis(control_file, experiment_file):
-    control_results_df = pd.read_csv(f'{DATA_FOLDER}/{control_file}')
-    experiment_results_df = pd.read_csv(f'{DATA_FOLDER}/{experiment_file}')
+def ensure_directory_exists(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
-    # run stat tests on card frequencies, hand values
-    control_results_df['dealer_hand'] = control_results_df["dealer_hand"].apply(lambda x: ast.literal_eval(x))
-    control_results_df["player_hand"] = control_results_df["player_hand"].apply(lambda x: ast.literal_eval(x))
-    experiment_results_df["dealer_hand"] = experiment_results_df["dealer_hand"].apply(lambda x: ast.literal_eval(x))
-    experiment_results_df["player_hand"] = experiment_results_df["player_hand"].apply(lambda x: ast.literal_eval(x))
-  
-    kl_div_dealer_card_freqs = compute_kl_divergence(control_results_df, experiment_results_df, 'dealer_hand')
-    kl_div_player_card_freqs = compute_kl_divergence(control_results_df, experiment_results_df, 'player_hand')
-    print("KL Divergence for Dealer Card Frequencies: ", kl_div_dealer_card_freqs)
-    print("KL Divergence for Player Card Frequencies: ", kl_div_player_card_freqs)
+def load_and_parse_data(control_file, experiment_file):
+    control_df = pd.read_csv(os.path.join(DATA_FOLDER, control_file))
+    experiment_df = pd.read_csv(os.path.join(DATA_FOLDER, experiment_file))
     
-    js_distance_dealer_card_freqs = compute_jensenshannon_distance(control_results_df, experiment_results_df, 'dealer_hand')
-    js_distance_player_card_freqs = compute_jensenshannon_distance(control_results_df, experiment_results_df, 'player_hand')
-    print("Jensen-Shannon Distance for Dealer Card Frequencies: ", js_distance_dealer_card_freqs)
-    print("Jensen-Shannon Distance for Player Card Frequencies: ", js_distance_player_card_freqs)
-
-    chi2_dealer_card_freqs, chi2_pval_dealer_card_freqs = chi_squared_test(control_results_df, experiment_results_df, 'dealer_hand')
-    chi2_player_card_freqs, chi2_pval_player_card_freqs = chi_squared_test(control_results_df, experiment_results_df, 'player_hand')
-    print('Chi-Squared Test for Dealer Card Frequences: ', chi2_dealer_card_freqs, chi2_pval_dealer_card_freqs)
-    print('Chi-Squared Test for Player Card Frequences: ', chi2_player_card_freqs, chi2_pval_player_card_freqs)
-
-    ks_dealer_card_freqs = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'dealer_hand')
-    ks_player_card_freqs = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'player_hand')
-    print("Kolmogorov-Smirnov Test for Dealer Card Frequencies: ", ks_dealer_card_freqs)
-    print("Kolmogorov-Smirnov Test  for Player Card Frequencies: ", ks_player_card_freqs)
+    for df in [control_df, experiment_df]:
+        df['dealer_hand'] = df['dealer_hand'].apply(lambda x: ast.literal_eval(x))
+        df['player_hand'] = df['player_hand'].apply(lambda x: ast.literal_eval(x))
     
-    print('================================')
+    return control_df, experiment_df
 
-    kl_div_dealer_hand_value = compute_kl_divergence(control_results_df, experiment_results_df, 'dealer_hand_value')
-    kl_div_player_hand_value = compute_kl_divergence(control_results_df, experiment_results_df, 'player_hand_value')
-    print("KL Divergence for Dealer Final Hand Values: ", kl_div_dealer_hand_value)
-    print("KL Divergence for Player Final Hand Values: ", kl_div_player_hand_value)
+def run_statistical_analysis(control_file, experiment_file, experiment_name):
+    print("Starting statistical analysis")
 
-    chi2_dealer_hand_value, chi2_pval_dealer_hand_value = chi_squared_test(control_results_df, experiment_results_df, 'dealer_hand_value')
-    chi2_player_hand_value, chi2_pval_player_hand_value = chi_squared_test(control_results_df, experiment_results_df, 'player_hand_value')
-    print('Chi-Squared Test for Dealer Final Hand Values: ', chi2_dealer_hand_value, chi2_pval_dealer_hand_value)
-    print('Chi-Squared Test for Player Final Hand Values: ', chi2_player_hand_value, chi2_pval_player_hand_value)
+    output_dir = os.path.join(DATA_FOLDER, 'statistical_analysis')
+    ensure_directory_exists(output_dir)
 
-    ks_dealer_hand_value = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'dealer_hand_value')
-    ks_player_hand_value = kolmogorov_smirnov_test(control_results_df, experiment_results_df, 'player_hand_value')
-    print("Kolmogorov-Smirnov Test for Dealer Final Hand Values: ", ks_dealer_hand_value)
-    print("Kolmogorov-Smirnov Test  for Player Final Hand Values: ", ks_player_hand_value)
+    control_df, experiment_df = load_and_parse_data(control_file, experiment_file)
 
-    ad_dealer_hand_value = anderson_darling_test(control_results_df, experiment_results_df, 'dealer_hand_value')
-    ad_player_hand_value = anderson_darling_test(control_results_df, experiment_results_df, 'player_hand_value')
-    print("Anderson-Darling Test for Dealer Final Hand Values: ", ad_dealer_hand_value)
-    print("Anderson-Darling Test  for Player Final Hand Values: ", ad_player_hand_value)
+    tests = {
+        "KL Divergence for Dealer Card Frequencies": lambda: compute_kl_divergence(control_df, experiment_df, 'dealer_hand'),
+        "KL Divergence for Player Card Frequencies": lambda: compute_kl_divergence(control_df, experiment_df, 'player_hand'),
+        "Jensen-Shannon Distance for Dealer Card Frequencies": lambda: compute_jensenshannon_distance(control_df, experiment_df, 'dealer_hand'),
+        "Jensen-Shannon Distance for Player Card Frequencies": lambda: compute_jensenshannon_distance(control_df, experiment_df, 'player_hand'),
+        "Chi-Squared Test for Dealer Card Frequencies": lambda: chi_squared_test(control_df, experiment_df, 'dealer_hand'),
+        "Chi-Squared Test for Player Card Frequencies": lambda: chi_squared_test(control_df, experiment_df, 'player_hand'),
+        "Kolmogorov-Smirnov Test for Dealer Card Frequencies": lambda: kolmogorov_smirnov_test(control_df, experiment_df, 'dealer_hand'),
+        "Kolmogorov-Smirnov Test for Player Card Frequencies": lambda: kolmogorov_smirnov_test(control_df, experiment_df, 'player_hand'),
+        "Anderson-Darling Test for Dealer Card Frequencies": lambda: anderson_darling_test(control_df, experiment_df, 'dealer_hand'),
+        "Anderson-Darling Test for Player Card Frequencies": lambda: anderson_darling_test(control_df, experiment_df, 'player_hand'),
+        "KL Divergence for Dealer Final Hand Values": lambda: compute_kl_divergence(control_df, experiment_df, 'dealer_hand_value'),
+        "KL Divergence for Player Final Hand Values": lambda: compute_kl_divergence(control_df, experiment_df, 'player_hand_value'),
+        "Chi-Squared Test for Dealer Final Hand Values": lambda: chi_squared_test(control_df, experiment_df, 'dealer_hand_value'),
+        "Chi-Squared Test for Player Final Hand Values": lambda: chi_squared_test(control_df, experiment_df, 'player_hand_value'),
+        "Kolmogorov-Smirnov Test for Dealer Final Hand Values": lambda: kolmogorov_smirnov_test(control_df, experiment_df, 'dealer_hand_value'),
+        "Kolmogorov-Smirnov Test for Player Final Hand Values": lambda: kolmogorov_smirnov_test(control_df, experiment_df, 'player_hand_value'),
+        "Anderson-Darling Test for Dealer Final Hand Values": lambda: anderson_darling_test(control_df, experiment_df, 'dealer_hand_value'),
+        "Anderson-Darling Test for Player Final Hand Values": lambda: anderson_darling_test(control_df, experiment_df, 'player_hand_value')
+    }
+    
+    results = {}
+    for test_name, test_fn in tests.items():
+        print(f"Running {test_name}...")
+        results[test_name] = test_fn()
+
+    with open(os.path.join(output_dir, f'{experiment_name}_statistical_results.csv'), 'w', newline='') as f:
+        writer = csv.writer(f)
+        for test_name, result in results.items():
+            writer.writerow([test_name, result])
+    
+    print("Statistical analysis complete.")
 
 if __name__ == "__main__":
 
-    NUM_GAMES = 10000
+    # NUM_GAMES = 10000
 
-    run_control_experiment(NUM_GAMES, "baseline")
+    # run_control_experiment(NUM_GAMES, "baseline")
 
     # thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_few_shot", agent_gpt_0, FEW_SHOT_PROMPT))
     # thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_few_shot", agent_claude_0, FEW_SHOT_PROMPT))
-
     # thread3 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_few_shot", agent_gpt_5, FEW_SHOT_PROMPT))
     # thread4 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_few_shot", agent_claude_5, FEW_SHOT_PROMPT))
+    # thread5 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_zero_shot", agent_gpt_0, ZERO_SHOT_PROMPT))
+    # thread6 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_zero_shot", agent_claude_0, ZERO_SHOT_PROMPT))
+    # thread7 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT))
+    # thread8 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_zero_shot", agent_claude_5, ZERO_SHOT_PROMPT))
 
-    # thread2 = threading.Thread(target=run_agent_experiment, args=(claude, IMPLICIT_SYSTEM_PROMPT, "claude_implicit", NUM_GAMES))
-    # thread3 = threading.Thread(target=run_agent_experiment, args=(mixstral, IMPLICIT_SYSTEM_PROMPT, "mixstral_implicit", NUM_GAMES))
-
-    # thread4 = threading.Thread(target=run_agent_experiment, args=(gpt, EXPLICIT_SYSTEM_PROMPT, "gpt_explicit", NUM_GAMES))
-    # thread5 = threading.Thread(target=run_agent_experiment, args=(claude, EXPLICIT_SYSTEM_PROMPT, "claude_explicit", NUM_GAMES))
-    # thread6 = threading.Thread(target=run_agent_experiment, args=(mixstral, EXPLICIT_SYSTEM_PROMPT, "mixstral_explicit", NUM_GAMES))
-
-    # for thread in [thread1, thread2, thread3, thread4]:
+    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6, thread7, thread8]:
     #     thread.start()
     
-    # for thread in [thread1, thread2, thread3, thread4]:
+    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6, thread7, thread8]:
     #     thread.join()
 
-    # control_files = {
-    #     'results': 'game_results.csv',
-    #     'dealer_draws': 'dealer_draws.csv'
-    # }
+    control_files = {
+        'results': 'baseline/baseline_game_results.csv',
+    }
 
-    # experiment_files = {
-    #     'GPT_Implicit': {
-    #         'results': 'gpt_implicit_game_results.csv',
-    #         'dealer_draws': 'gpt_implicit_dealer_draws.csv'
-    #     },
-    #     'GPT_Explicit': {
-    #         'results': 'gpt_explicit_game_results.csv',
-    #         'dealer_draws': 'gpt_explicit_dealer_draws.csv'
-    #     },
-    #     'Mixstral_Explicit': {
-    #         'results': 'mixstral_explicit_game_results.csv',
-    #         'dealer_draws': 'mixstral_explicit_dealer_draws.csv'
-    #     },
-    #     'Mixstral_Implicit': {
-    #         'results': 'mixstral_implicit_game_results.csv',
-    #         'dealer_draws': 'mixstral_implicit_dealer_draws.csv'
-    #     },
-    #     'LLAMA_Implicit': {
-    #         'results': 'llama_implicit_game_results.csv',
-    #         'dealer_draws': 'llama_implicit_dealer_draws.csv'
-    #     },
-    #     'LLAMA_Explicit': {
-    #         'results': 'llama_explicit_game_results.csv',
-    #         'dealer_draws': 'llama_explicit_dealer_draws.csv'
-    #     }
-    # }
+    experiment_files = {
+        # 'Llama_0.0_Few_Shot': {
+        #     'results': 'llama_0.0_few_shot/llama_0.0_few_shot_game_results.csv',
+        # },
+        # 'Llama_0.0_Zero_Shot': {
+        #     'results': 'llama_0.0_zero_shot/llama_0.0_zero_shot_game_results.csv',
+        # },
+        'Llama_0.5_Few_Shot': {
+            'results': 'llama_0.5_few_shot/llama_0.5_few_shot_game_results.csv',
+        },
+        'Llama_0.5_Zero_Shot': {
+            'results': 'llama_0.5_zero_shot/llama_0.5_zero_shot_game_results.csv',
+        },
+        # 'GPT_0.0_Few_Shot': {
+        #     'results': 'gpt_0.0_few_shot/gpt_0.0_few_shot_game_results.csv',
+        # },
+        # 'GPT_0.5_Few_Shot': {
+        #     'results': 'gpt_0.5_few_shot/gpt_0.5_few_shot_game_results.csv',
+        # },
+        # 'Claude_0.0_Few_Shot': {
+        #     'results': 'claude_0.0_few_shot/claude_0.0_few_shot_game_results.csv',
+        # },
+        # 'Claude_0.5_Few_Shot': {
+        #     'results': 'claude_0.5_few_shot/claude_0.5_few_shot_game_results.csv',
+        # },
+        # 'GPT_0.0_Zero_Shot': {
+        #     'results': 'gpt_0.0_zero_shot/gpt_0.0_zero_shot_game_results.csv',
+        # },
+        # 'GPT_0.5_Zero_Shot': {
+        #     'results': 'gpt_0.5_zero_shot/gpt_0.5_zero_shot_game_results.csv',
+        # },
+        # 'Claude_0.0_Zero_Shot': {
+        #     'results': 'claude_0.0_zero_shot/claude_0.0_zero_shot_game_results.csv',
+        # },
+        # 'Claude_0.5_Zero_Shot': {
+        #     'results': 'claude_0.5_zero_shot/claude_0.5_zero_shot_game_results.csv',
+        # }
+    }
 
-    # perform_ks_tests(control_files, experiment_files)
-
-    # run_statistical_analysis('baseline_game_results.csv', 'baseline_game_results_1.csv')
+    for experiment_name, files in experiment_files.items():
+        print(f"Analyzing results for {experiment_name}")
+        run_statistical_analysis(control_files['results'], files['results'], experiment_name)

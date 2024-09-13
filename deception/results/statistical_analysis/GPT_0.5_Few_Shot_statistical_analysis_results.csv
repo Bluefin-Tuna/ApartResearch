@@ -1,0 +1,18 @@
+KL Divergence for Dealer Card Frequencies,0.8514735765961674,,,
+KL Divergence for Player Card Frequencies,1.0004294187076885,,,
+Jensen-Shannon Distance for Dealer Card Frequencies,0.3401205223325144,,,
+Jensen-Shannon Distance for Player Card Frequencies,0.3690478886899494,,,
+Chi-Squared Test for Dealer Card Frequencies,1647.7494307771012,0.0,21.02606981748307,True
+Chi-Squared Test for Player Card Frequencies,2104.7044390308206,0.0,21.02606981748307,True
+Kolmogorov-Smirnov Test for Dealer Card Frequencies,0.5384615384615384,0.04427244582043343,,
+Kolmogorov-Smirnov Test for Player Card Frequencies,0.46153846153846156,0.12648770263254042,,
+Anderson-Darling Test for Dealer Card Frequencies,3.3646562940452536,0.014064700813794708,0.32500000000000007,True
+Anderson-Darling Test for Player Card Frequencies,3.1533353084365774,0.016973643469325523,0.32500000000000007,True
+KL Divergence for Dealer Final Hand Values,0.06211386827956944,,,
+KL Divergence for Player Final Hand Values,0.1646443057139514,,,
+Chi-Squared Test for Dealer Final Hand Values,141.45807206194837,3.733023850541856e-22,26.296227604864242,True
+Chi-Squared Test for Player Final Hand Values,248.45274730375962,6.003963499765579e-45,23.68479130484058,True
+Kolmogorov-Smirnov Test for Dealer Final Hand Values,0.23529411764705882,0.7506071234246195,,
+Kolmogorov-Smirnov Test for Player Final Hand Values,0.3333333333333333,0.3855465198257425,,
+Anderson-Darling Test for Dealer Final Hand Values,-0.7763658285858545,0.25,0.32500000000000007,False
+Anderson-Darling Test for Player Final Hand Values,0.33751352331682555,0.2426858823537662,0.32500000000000007,True
