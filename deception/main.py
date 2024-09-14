@@ -204,68 +204,63 @@ def run_statistical_analysis(control_file, experiment_file, experiment_name):
 
 if __name__ == "__main__":
 
-    # NUM_GAMES = 10000
+    NUM_GAMES = 1000
 
-    # run_control_experiment(NUM_GAMES, "baseline")
+    run_control_experiment(NUM_GAMES, "baseline")
 
-    # thread1 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_few_shot", agent_gpt_0, FEW_SHOT_PROMPT))
-    # thread2 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_few_shot", agent_claude_0, FEW_SHOT_PROMPT))
-    # thread3 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_few_shot", agent_gpt_5, FEW_SHOT_PROMPT))
-    # thread4 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_few_shot", agent_claude_5, FEW_SHOT_PROMPT))
-    # thread5 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.0_zero_shot", agent_gpt_0, ZERO_SHOT_PROMPT))
-    # thread6 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.0_zero_shot", agent_claude_0, ZERO_SHOT_PROMPT))
-    # thread7 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT))
-    # thread8 = threading.Thread(target=run_agent_experiment, args=(NUM_GAMES, "claude_0.5_zero_shot", agent_claude_5, ZERO_SHOT_PROMPT))
+    run_agent_experiment(NUM_GAMES, "gpt_0.0_few_shot", agent_gpt_0, FEW_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "claude_0.0_few_shot", agent_claude_0, FEW_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "gpt_0.5_few_shot", agent_gpt_5, FEW_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "claude_0.5_few_shot", agent_claude_5, FEW_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "gpt_0.0_zero_shot", agent_gpt_0, ZERO_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "claude_0.0_zero_shot", agent_claude_0, ZERO_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "gpt_0.5_zero_shot", agent_gpt_5, ZERO_SHOT_PROMPT)
+    run_agent_experiment(NUM_GAMES, "claude_0.5_zero_shot", agent_claude_5, ZERO_SHOT_PROMPT)
 
-    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6, thread7, thread8]:
-    #     thread.start()
-    
-    # for thread in [thread1, thread2, thread3, thread4, thread5, thread6, thread7, thread8]:
-    #     thread.join()
 
-    control_files = {
-        'results': 'baseline/baseline_game_results.csv',
-    }
+    # control_files = {
+    #     'results': 'baseline/baseline_game_results.csv',
+    # }
 
-    experiment_files = {
-        # 'Llama_0.0_Few_Shot': {
-        #     'results': 'llama_0.0_few_shot/llama_0.0_few_shot_game_results.csv',
-        # },
-        # 'Llama_0.0_Zero_Shot': {
-        #     'results': 'llama_0.0_zero_shot/llama_0.0_zero_shot_game_results.csv',
-        # },
-        'Llama_0.5_Few_Shot': {
-            'results': 'llama_0.5_few_shot/llama_0.5_few_shot_game_results.csv',
-        },
-        'Llama_0.5_Zero_Shot': {
-            'results': 'llama_0.5_zero_shot/llama_0.5_zero_shot_game_results.csv',
-        },
-        # 'GPT_0.0_Few_Shot': {
-        #     'results': 'gpt_0.0_few_shot/gpt_0.0_few_shot_game_results.csv',
-        # },
-        # 'GPT_0.5_Few_Shot': {
-        #     'results': 'gpt_0.5_few_shot/gpt_0.5_few_shot_game_results.csv',
-        # },
-        # 'Claude_0.0_Few_Shot': {
-        #     'results': 'claude_0.0_few_shot/claude_0.0_few_shot_game_results.csv',
-        # },
-        # 'Claude_0.5_Few_Shot': {
-        #     'results': 'claude_0.5_few_shot/claude_0.5_few_shot_game_results.csv',
-        # },
-        # 'GPT_0.0_Zero_Shot': {
-        #     'results': 'gpt_0.0_zero_shot/gpt_0.0_zero_shot_game_results.csv',
-        # },
-        # 'GPT_0.5_Zero_Shot': {
-        #     'results': 'gpt_0.5_zero_shot/gpt_0.5_zero_shot_game_results.csv',
-        # },
-        # 'Claude_0.0_Zero_Shot': {
-        #     'results': 'claude_0.0_zero_shot/claude_0.0_zero_shot_game_results.csv',
-        # },
-        # 'Claude_0.5_Zero_Shot': {
-        #     'results': 'claude_0.5_zero_shot/claude_0.5_zero_shot_game_results.csv',
-        # }
-    }
+    # experiment_files = {
+    #     # 'Llama_0.0_Few_Shot': {
+    #     #     'results': 'llama_0.0_few_shot/llama_0.0_few_shot_game_results.csv',
+    #     # },
+    #     # 'Llama_0.0_Zero_Shot': {
+    #     #     'results': 'llama_0.0_zero_shot/llama_0.0_zero_shot_game_results.csv',
+    #     # },
+    #     'Llama_0.5_Few_Shot': {
+    #         'results': 'llama_0.5_few_shot/llama_0.5_few_shot_game_results.csv',
+    #     },
+    #     'Llama_0.5_Zero_Shot': {
+    #         'results': 'llama_0.5_zero_shot/llama_0.5_zero_shot_game_results.csv',
+    #     },
+    #     # 'GPT_0.0_Few_Shot': {
+    #     #     'results': 'gpt_0.0_few_shot/gpt_0.0_few_shot_game_results.csv',
+    #     # },
+    #     # 'GPT_0.5_Few_Shot': {
+    #     #     'results': 'gpt_0.5_few_shot/gpt_0.5_few_shot_game_results.csv',
+    #     # },
+    #     # 'Claude_0.0_Few_Shot': {
+    #     #     'results': 'claude_0.0_few_shot/claude_0.0_few_shot_game_results.csv',
+    #     # },
+    #     # 'Claude_0.5_Few_Shot': {
+    #     #     'results': 'claude_0.5_few_shot/claude_0.5_few_shot_game_results.csv',
+    #     # },
+    #     # 'GPT_0.0_Zero_Shot': {
+    #     #     'results': 'gpt_0.0_zero_shot/gpt_0.0_zero_shot_game_results.csv',
+    #     # },
+    #     # 'GPT_0.5_Zero_Shot': {
+    #     #     'results': 'gpt_0.5_zero_shot/gpt_0.5_zero_shot_game_results.csv',
+    #     # },
+    #     # 'Claude_0.0_Zero_Shot': {
+    #     #     'results': 'claude_0.0_zero_shot/claude_0.0_zero_shot_game_results.csv',
+    #     # },
+    #     # 'Claude_0.5_Zero_Shot': {
+    #     #     'results': 'claude_0.5_zero_shot/claude_0.5_zero_shot_game_results.csv',
+    #     # }
+    # }
 
-    for experiment_name, files in experiment_files.items():
-        print(f"Analyzing results for {experiment_name}")
-        run_statistical_analysis(control_files['results'], files['results'], experiment_name)
+    # for experiment_name, files in experiment_files.items():
+    #     print(f"Analyzing results for {experiment_name}")
+    #     run_statistical_analysis(control_files['results'], files['results'], experiment_name)
